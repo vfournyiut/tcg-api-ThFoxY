@@ -94,14 +94,14 @@ authRouter.post("/sign-in", async (req: Request, res: Response) =>
         });
 
         if (!existingUser) {
-            return res.status(401).json({error: 'Email ou mot de passe incorrect'})
+            return res.status(401).json({error: "Email ou mot de passe incorrect"})
         };
 
         // 2. Vérifier le mot-de-passe
         const isPasswordValid = await bcrypt.compare(password, existingUser.password);
 
         if (!isPasswordValid) {
-            return res.status(401).json({error: 'Email ou mot de passe incorrect'})
+            return res.status(401).json({error: "Email ou mot de passe incorrect"})
         };
 
         // 3. Générer le JWT (https://www.npmjs.com/package/jsonwebtoken)
