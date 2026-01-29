@@ -1,7 +1,7 @@
 meta {
-  name: Sign In (Blue)
+  name: Sign In
   type: http
-  seq: 4
+  seq: 2
 }
 
 post {
@@ -12,7 +12,7 @@ post {
 
 body:json {
   {
-    "email": "blue@example.com",
+    "email": "user@example.com",
     "password": "password123"
   }
 }
@@ -24,8 +24,8 @@ script:post-response {
 }
 
 docs {
-  Sign in as Blue user (from seed data).
-
+  Sign in with existing user credentials.
+  
   Returns:
   - 200: Sign in successful with JWT token (automatically saved to environment)
   - 401: Invalid credentials

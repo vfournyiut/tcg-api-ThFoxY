@@ -2,11 +2,12 @@ import {createServer} from "http";
 import {env} from "./env";
 import express from "express";
 import cors from "cors";
+import {authRouter} from "./auth/auth.route"
 
 // Create Express app
 export const app = express();
 
-// Middlewares
+// Middlewares pour autoriser les requêtes CORS multi-origines (https://developer.mozilla.org/fr/docs/Web/HTTP/Guides/CORS)
 app.use(
     cors({
         origin: true,  // Autorise toutes les origines
@@ -14,10 +15,15 @@ app.use(
     }),
 );
 
+// Middleware pour parser le JSON
 app.use(express.json());
 
 // Serve static files (Socket.io test client)
 app.use(express.static('public'));
+
+// Utilisation des routeurs spécifiques
+// Authentification (toutes les routes d'authentification seront préfixées par /auth)
+app.use("api/auth", authRouter);
 
 // Health check endpoint
 app.get("/api/health", (_req, res) => {
