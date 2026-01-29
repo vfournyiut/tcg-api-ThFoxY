@@ -22,8 +22,8 @@ app.use(express.json());
 app.use(express.static('public'));
 
 // Utilisation des routeurs spécifiques
-// Authentification (toutes les routes d'authentification seront préfixées par /auth)
-app.use("api/auth", authRouter);
+// Authentification (toutes les routes d'authentification seront préfixées par /api/auth)
+app.use("/api/auth", authRouter);
 
 // Health check endpoint
 app.get("/api/health", (_req, res) => {
