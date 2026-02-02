@@ -1,14 +1,15 @@
-import {Request, Response, Router} from "express"
+import {Response, Router} from "express"
 import bcrypt from "bcryptjs"
 import jwt from "jsonwebtoken"
 import {prisma} from "../../src/database";
+import {SignUpRequest, SignInRequest} from "../types/express";
 
 // Création du router pour l'authentification
 export const authRouter = Router()
 
 // POST /auth/sign-up
 // Accessible via POST /auth/sign-up
-authRouter.post("/sign-up", async (req: Request, res: Response) =>
+authRouter.post("/sign-up", async (req: SignUpRequest, res: Response) =>
 {
     // Destructuration : extrait les champs email, username et password de la requête POST pour en faire des variables distinctes
     const {email, username, password} = req.body;
@@ -77,7 +78,7 @@ authRouter.post("/sign-up", async (req: Request, res: Response) =>
 
 // POST /auth/sign-in
 // Accessible via POST /auth/sign-in
-authRouter.post("/sign-in", async (req: Request, res: Response) =>
+authRouter.post("/sign-in", async (req: SignInRequest, res: Response) =>
 {
     // Destructuration : extrait les champs email et password de la requête POST pour en faire des variables distinctes
     const {email, password} = req.body;
