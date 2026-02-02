@@ -2,7 +2,8 @@ import {createServer} from "http";
 import {env} from "./env";
 import express from "express";
 import cors from "cors";
-import {authRouter} from "./auth/auth.route"
+import {authRouter} from "./auth/auth.route";
+import {cardsRouter} from "./cards/cards.route";
 
 // Create Express app
 export const app = express();
@@ -24,6 +25,10 @@ app.use(express.static('public'));
 // Utilisation des routeurs spécifiques
 // Authentification (toutes les routes d'authentification seront préfixées par /api/auth)
 app.use("/api/auth", authRouter);
+
+// Cartes Pokémon (toutes les routes de cartes Pokémon seront préfixées par /api/cards)
+// Pour l'instant, il n'y a que GET /api/cards (mais d'autres endpoints seront ajoutés)
+app.use("/api/cards", cardsRouter);
 
 // Health check endpoint
 app.get("/api/health", (_req, res) => {
