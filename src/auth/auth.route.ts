@@ -1,11 +1,11 @@
-import {Response, Router} from "express"
-import bcrypt from "bcryptjs"
-import jwt from "jsonwebtoken"
+import {Response, Router} from "express";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import {prisma} from "../../src/database";
 import {SignUpRequest, SignInRequest} from "../types/express";
 
 // Création du router pour l'authentification
-export const authRouter = Router()
+export const authRouter = Router();
 
 // POST /auth/sign-up
 // Accessible via POST /auth/sign-up
@@ -57,7 +57,7 @@ authRouter.post("/sign-up", async (req: SignUpRequest, res: Response) =>
                 email: newUser.email,
             },
             process.env.JWT_SECRET as string,
-            {expiresIn: '7d'}
+            {expiresIn: "7d"}
         );
 
         // 6. Retourner les infos de l'utilisateur
