@@ -24,5 +24,5 @@ cardsRouter.get("/", authenticateToken, async (req: Request, res: Response) =>
     } catch (error) {
         console.error("Error when getting Pokémon cards:", error);
         return res.status(500).json({error: "Server error"});
-    }
+    };
 });
