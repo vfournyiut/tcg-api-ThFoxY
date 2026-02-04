@@ -212,3 +212,60 @@ decksRouter.patch("/:id", authenticateToken, async (req: Request, res: Response)
         return res.status(500).json({error: "Server error"});
     };
 });
+
+// DELETE /api/decks/:id
+// Accessible via DELETE /api/decks/:id
+// JWT : S'assure que le token est valide
+decksRouter.delete("/:id", authenticateToken, async (req: Request, res: Response) =>
+{
+    // Récupérer l'ID en paramètre
+    const deckId = Number(req.params.id);
+
+    // Récupérer le Deck par son ID
+    try {
+        // 1. Vérifier si le deck existe
+        const existingDeck = await prisma.deck.findUnique({
+            where: {
+                id: deckId,
+            }
+        });
+
+        if (!existingDeck) {
+            return res.status(404).json({error: "Deck introuvable"});
+        };
+
+        // 2. Vérifier si le deck appartient à l'utilisateur authentifié
+        const deckById = await prisma.deck.findUnique({
+            where: {
+                id: deckId,
+                userId: req.user!.userId,
+            },
+        });
+
+        if (!deckById) {
+            return res.status(403).json({error: "Deck inaccesible"});
+        };
+
+        // 3. Supprimer le Deck et ses dépendances (jointure DeckCard)
+        // Supprimer les cartes associées au Deck via la jointure
+        await prisma.deckCard.deleteMany({
+            where: {
+                deckId: deckId,
+            }
+        });
+        // Supprime le Deck
+        await prisma.deck.delete({
+            where: {
+                id: deckId,
+            }
+        });
+
+        // 4. Retourner la réussite de la suppression
+        return res.status(200).json({
+            message: "Suppression réussie",
+        });
+    } catch (error) {
+        console.error("Error when getting deck by ID:", error);
+        return res.status(500).json({error: "Server error"});
+    };
+});
