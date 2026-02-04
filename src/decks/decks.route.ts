@@ -68,7 +68,7 @@ decksRouter.get("/mine", authenticateToken, async (req: Request, res: Response) 
     try {
         const decks = await prisma.deck.findMany({
             where: {
-                userId: req.user!.userId,   // '!' signifie au compilateur TypeScript que req.user n'est pas null (puisqu'on vérifie avec authenticateToken s'il y a des erreurs)
+                userId: req.user!.userId,
             }
         });
 
@@ -76,6 +76,49 @@ decksRouter.get("/mine", authenticateToken, async (req: Request, res: Response) 
         return res.status(200).json(decks);
     } catch (error) {
         console.error("Error when getting user's decks:", error);
+        return res.status(500).json({error: "Server error"});
+    };
+});
+
+// GET /api/decks/:id
+// Accessible via GET /api/decks/:id
+// JWT : S'assure que le token est valide
+decksRouter.get("/:id", authenticateToken, async (req: Request, res: Response) =>
+{
+    const deckId = Number(req.params.id);
+    // Récupérer le Deck par son ID
+    try {
+        // 1. Vérifier si le deck existe
+        const existingDeck = await prisma.deck.findUnique({
+            where: {
+                id: deckId,
+            }
+        });
+
+        if (!existingDeck) {
+            return res.status(404).json({error: "Deck introuvable"});
+        };
+
+        // 2. Vérifier si le deck appartient à l'utilisateur authentifié
+        const deckById = await prisma.deck.findUnique({
+            where: {
+                id: deckId,
+                userId: req.user!.userId,
+            },
+            // Inclure les cartes du Deck (Prisma s'occupe de lier la jointure DeckCard)
+            include: {
+                cards: true,
+            }
+        });
+
+        if (!deckById) {
+            return res.status(403).json({error: "Deck inaccesible"});
+        }
+
+        // 3. Retourner le Deck
+        return res.status(200).json(deckById);
+    } catch (error) {
+        console.error("Error when getting deck by ID:", error);
         return res.status(500).json({error: "Server error"});
     };
 });

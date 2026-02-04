@@ -8,7 +8,7 @@ export const cardsRouter = Router();
 // GET /api/cards
 // Accessible via GET /api/cards
 // JWT : S'assure que le token est valide (@see documentation Get All Cards.bru)
-cardsRouter.get("/", authenticateToken, async (req: Request, res: Response) =>
+cardsRouter.get("/", authenticateToken, async (_req: Request, res: Response) =>
 {
     // Récupérer toutes les cartes Pokémon
     try {
@@ -18,7 +18,7 @@ cardsRouter.get("/", authenticateToken, async (req: Request, res: Response) =>
                 pokedexNumber: "asc"
             }
         });
-
+''
         // Retourner les cartes Pokémon
         return res.status(200).json(cards);
     } catch (error) {
