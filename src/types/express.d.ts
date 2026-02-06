@@ -1,5 +1,5 @@
 import 'express';
-import {Request} from 'express';
+import { Request } from 'express';
 
 declare module 'express' {
     interface Request {
@@ -8,16 +8,16 @@ declare module 'express' {
             email: string;
         };
     }
-};
+}
 
 // Typage pour la requête POST /sign-up
 export interface SignUpRequestBody {
-    email: string,
-    password: string,
-    username: string
-};
+    email: string;
+    password: string;
+    username: string;
+}
 
-export interface SignUpRequest extends Request<{}, any, SignUpRequestBody> {};
+export interface SignUpRequest extends Request<{}, any, SignUpRequestBody> {}
 
 // Typage pour la requête POST /sign-in
 export interface SignInRequestBody {

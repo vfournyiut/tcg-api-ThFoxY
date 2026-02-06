@@ -11,6 +11,10 @@
     "start": "node dist/index.js",
     "test": "vitest --coverage --run",
     "test:ui": "vitest --ui",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "db:start": "docker compose up -d",
     "db:stop": "docker compose down",
     "db:generate": "prisma generate",
@@ -37,6 +41,7 @@
     "uuid": "13.0.0"
   },
   "devDependencies": {
+    "@eslint/js": "9.39.2",
     "@types/bcryptjs": "2.4.6",
     "@types/cors": "2.8.17",
     "@types/express": "4.17.21",
@@ -48,8 +53,13 @@
     "@types/uuid": "10.0.0",
     "@vitest/coverage-v8": "4.0.15",
     "@vitest/ui": "4.0.15",
+    "eslint": "9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "prettier": "^3.8.1",
     "tsx": "4.7.0",
     "typescript": "5.4.5",
+    "typescript-eslint": "8.54.0",
     "vite-tsconfig-paths": "5.1.4",
     "vitest": "4.0.15",
     "vitest-mock-extended": "3.1.0"
