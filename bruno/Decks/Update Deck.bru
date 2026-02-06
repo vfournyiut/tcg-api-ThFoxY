@@ -21,18 +21,22 @@ body:json {
   }
 }
 
+vars:pre-request {
+  deckId: 3
+}
+
 docs {
   Update an existing deck.
-
+  
   Requires authentication and deck ownership.
-
+  
   Variables needed:
   - deckId: The ID of the deck to update (get from Get My Decks response)
-
+  
   Body:
   - name: string (optional) - New name for the deck
   - cards: array of numbers (optional) - Must be exactly 10 valid card IDs if provided
-
+  
   Returns:
   - 200: Deck updated successfully
   - 400: Invalid input (must be exactly 10 valid card IDs if cards provided)
