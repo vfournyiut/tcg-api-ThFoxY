@@ -125,7 +125,7 @@ decksRouter.get(
       });
 
       if (!deckById) {
-        return res.status(403).json({ error: "Deck inaccesible" });
+        return res.status(403).json({ error: "Deck inaccessible" });
       }
 
       // 3. Retourner le Deck
@@ -194,7 +194,7 @@ decksRouter.patch(
       });
 
       if (!deckById) {
-        return res.status(403).json({ error: "Deck inaccesible" });
+        return res.status(403).json({ error: "Deck inaccessible" });
       }
 
       // 4. Mettre à jour le Deck
@@ -261,7 +261,7 @@ decksRouter.delete(
       });
 
       if (!deckById) {
-        return res.status(403).json({ error: "Deck inaccesible" });
+        return res.status(403).json({ error: "Deck inaccessible" });
       }
 
       // 3. Supprimer le Deck et ses dépendances (jointure DeckCard)
