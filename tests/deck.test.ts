@@ -513,18 +513,6 @@ describe("Deck tests (@see decks.route.ts)", () => {
 
   describe("DELETE /api/decks/:id", () => {
     it("should delete an existing deck", async () => {
-      /**
-       * Test de suppression d'un deck
-       *
-       * La route supprime d'abord les relations dans la table de jonction DeckCard
-       * puis supprime le deck lui-même
-       *
-       * Étapes de mock :
-       * 1. Vérification de l'existence du deck (findUnique)
-       * 2. Vérification de l'ownership (findUnique)
-       * 3. Suppression des relations DeckCard (deleteMany)
-       * 4. Suppression du deck (delete)
-       */
       // Mock de la fonction prisma.deck.findUnique
       prismaMock.deck.findUnique.mockResolvedValueOnce(mockDeck); // Vérification d'existence du deck (peu importe l'utilisateur)
       prismaMock.deck.findUnique.mockResolvedValueOnce(mockDeck); // Vérification que le deck appartient à l'utilisateur authentifié et récupérer les cartes

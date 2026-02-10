@@ -17,17 +17,19 @@ export const authentificateTokenMock = vi.fn((req, _res, next) => {
   next();
 });
 
+// Remplacer le middleware d'authentification par le mock partout
 vi.mock("../src/auth/auth.middleware", () => ({
   authentificateToken: authentificateTokenMock,
 }));
 
+// Avant chaque test, réinitialiser le mock du middleware
 beforeEach(() => {
   mockReset(prismaMock);
   authentificateTokenMock.mockClear();
   authentificateTokenMock.mockImplementation((req, _res, next) => {
     req.user = {
       userId: 1,
-      email: "red@example.com",
+      email: "test@example.com",
     };
     next();
   });
