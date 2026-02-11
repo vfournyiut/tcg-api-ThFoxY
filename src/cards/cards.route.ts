@@ -5,9 +5,21 @@ import { authentificateToken } from "../auth/auth.middleware";
 // Création du router pour les cartes Pokémon
 export const cardsRouter = Router();
 
-// GET /api/cards
-// Accessible via GET /api/cards
-// JWT : S'assure que le token est valide (@see documentation Get All Cards.bru)
+/**
+ * @async
+ * @description Récupère la liste exhaustive des cartes Pokémon, triées par leur numéro de Pokédex.
+ * @requires JWT - Nécessite un jeton d'authentification valide via le middleware @see {@link authentificateToken}.
+ *
+ * @param {Request} _req - L'objet de requête (inutilisé ici).
+ * @param {Response} res - L'objet de réponse utilisé pour renvoyer les données JSON.
+ *
+ * @returns {Promise<Response>} Renvoie une réponse HTTP 200 avec le tableau des cartes Pokémon.
+ * @throws {Error} Renvoie une erreur HTTP 500 si une erreur se produit.
+ *
+ * @example
+ * GET /api/cards
+ * Response: [{ "id": 1, "name": "Bulbasaur", ... }, { "id": 2, "name": "Ivysaur", ... }, ...]
+ */
 cardsRouter.get(
   "/",
   authentificateToken,
