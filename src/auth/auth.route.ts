@@ -7,8 +7,18 @@ import { SignUpRequest, SignInRequest } from "../types/express";
 // Création du router pour l'authentification
 export const authRouter = Router();
 
-// POST /auth/sign-up
-// Accessible via POST /auth/sign-up
+/**
+ * @async
+ * @description Enregistre un nouvel utilisateur après vérification des contraintes d'unicité.
+ *
+ * @param {SignInRequest} req - L'objet de requête contenant l'email, le username et le password.
+ * @param {Response} res - L'objet de réponse.
+ *
+ * @returns {Promise<Response>} Renvoie une réponse HTTP 201 si l'inscription réussie, avec le token JWT et les infos utilisateur.
+ * @throws {400} Renvoie une erreur HTTP 400 si les champs obligatoires sont manquants.
+ * @throws {409} Renvoie une erreur HTTP 409 si l'email ou le username existe déjà.
+ * @throws {500} Renvoie une erreur HTTP 500 si une erreur se produit.
+ */
 authRouter.post("/sign-up", async (req: SignUpRequest, res: Response) => {
   // Destructuration : extrait les champs email, username et password de la requête POST pour en faire des variables distinctes
   const { email, username, password } = req.body;
@@ -74,8 +84,18 @@ authRouter.post("/sign-up", async (req: SignUpRequest, res: Response) => {
   }
 });
 
-// POST /auth/sign-in
-// Accessible via POST /auth/sign-in
+/**
+ * @async
+ * @description Authentifie un utilisateur existant et génère un jeton JWT.
+ *
+ * @param {SignInRequest} req - L'objet de requête contenant l'email et le password.
+ * @param {Response} res - L'objet de réponse.
+ *
+ * @returns {Promise<Response>} Renvoie une réponse HTTP 200 si la connexion réussie, avec le token JWT et les infos utilisateur.
+ * @throws {400} Renvoie une erreur HTTP 400 si les champs obligatoires sont manquants.
+ * @throws {401} Renvoie une erreur HTTP 401 si l'email ou le password est incorrect.
+ * @throws {500} Renvoie une erreur HTTP 500 si une erreur se produit.
+ */
 authRouter.post("/sign-in", async (req: SignInRequest, res: Response) => {
   // Destructuration : extrait les champs email et password de la requête POST pour en faire des variables distinctes
   const { email, password } = req.body;
