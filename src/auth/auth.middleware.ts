@@ -3,7 +3,17 @@ import jwt from "jsonwebtoken";
 
 // Étendre le type Request (@see src/types/express.d.ts)
 
-// Middleware pour vérifier et décoder le token JWT
+/**
+ * @description Middleware d'authentification JWT chargé de valider le jeton présent les en-têtes Authorization des requêtes.
+ * Si le jeton est valide, les informations de l'utilisateur sont injectées dans l'objet `req.user`.
+ *
+ * @param {SignInRequest} req - L'objet de requête contenant l'en-tête Authorization.
+ * @param {Response} res - L'objet de réponse.
+ * @param {NextFunction} next - Le callback pour passer au middleware ou à la route suivante.
+ *
+ * @returns {Response | void} Renvoie une réponse HTTP 401 si le jeton est manquant ou invalide, sinon ne renvoie rien et appelle next().
+ * @throws {401} Renvoie une erreur HTTP 401 si le jeton est manquant ou invalide.
+ */
 export const authentificateToken = (
   req: Request,
   res: Response,
