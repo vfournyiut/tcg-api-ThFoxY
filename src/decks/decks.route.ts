@@ -2,15 +2,25 @@ import { Request, Response, Router } from "express";
 import { prisma } from "../../src/database";
 import { authentificateToken } from "../auth/auth.middleware";
 
-// TODO: Améliorer la documentation des fonctions
 // TODO: Traduire en français les noms pour les erreurs serveur (500+)
 
 // Création du router pour les decks
 export const decksRouter = Router();
 
-// POST /api/decks
-// Accessible via POST /api/decks
-// JWT : S'assure que le token est valide
+/**
+ * @async
+ * @description Crée un nouveau deck pour l'utilisateur authentifié.
+ * Le deck doit contenir exactement 10 cartes Pokémon valides.
+ * @requires JWT - Nécessite un jeton d'authentification valide via le middleware @see {@link authentificateToken}.
+ *
+ * @param {Request} req - L'objet de requête contenant `name` (string) et `cards` (array d'IDs de cartes Pokémon).
+ * @param {Response} res - L'objet de réponse utilisé pour renvoyer les données JSON.
+ *
+ * @returns {Promise<Response>} Renvoie une réponse HTTP 201 si le deck a bien été créé.
+ * @throws {400} Renvoie une erreur HTTP 400 si les champs obligatoires sont manquants ou si le nombre de cartes Pokémon est incorrect.
+ * @throws {401} Renvoie une erreur HTTP 401 si le jeton d'authentification est manquant ou invalide.
+ * @throws {500} Renvoie une erreur HTTP 500 si une erreur se produit.
+ */
 decksRouter.post(
   "/",
   authentificateToken,
@@ -65,9 +75,17 @@ decksRouter.post(
   },
 );
 
-// GET /api/decks/mine
-// Accessible via GET /api/decks/mine
-// JWT : S'assure que le token est valide
+/**
+ * @async
+ * @description Récupère tous les decks appartenant à l'utilisateur authentifié.
+ * @requires JWT - Nécessite un jeton d'authentification valide via le middleware @see {@link authentificateToken}.
+ *
+ * @param {Request} req - L'objet de requête contenant les infos de l'utilisateur authentifié.
+ * @param {Response} res - L'objet de réponse utilisé pour renvoyer les données JSON.
+ *
+ * @returns {Promise<Response>} Renvoie une réponse HTTP 200 contenant la liste des decks de l'utilisateur authentifié.
+ * @throws {500} Renvoie une erreur HTTP 500 si une erreur se produit.
+ */
 decksRouter.get(
   "/mine",
   authentificateToken,
@@ -89,9 +107,21 @@ decksRouter.get(
   },
 );
 
-// GET /api/decks/:id
-// Accessible via GET /api/decks/:id
-// JWT : S'assure que le token est valide
+/**
+ * @async
+ * @description Récupère les détails d'un deck spécifique par ID.
+ * Le deck doit exister et appartir à l'utilisateur authentifié.
+ * @requires JWT - Nécessite un jeton d'authentification valide via le middleware @see {@link authentificateToken}.
+ *
+ * @param {Request} req - L'objet de requête contenant l'ID du deck en paramètre d'URL.
+ * @param {Response} res - L'objet de réponse utilisé pour renvoyer les données JSON.
+ *
+ * @returns {Promise<Response>} Renvoie une réponse HTTP 200 contenant les données du deck (avec cartes incluses) si le deck existe et appartient à l'utilisateur authentifié.
+ * @throws {401} Renvoie une erreur HTTP 401 si le jeton d'authentification est manquant ou invalide.
+ * @throws {403} Renvoie une erreur HTTP 403 si le deck n'appartient pas à l'utilisateur authentifié.
+ * @throws {404} Renvoie une erreur HTTP 404 si le deck n'existe pas.
+ * @throws {500} Renvoie une erreur HTTP 500 si une erreur se produit.
+ */
 decksRouter.get(
   "/:id",
   authentificateToken,
@@ -137,9 +167,22 @@ decksRouter.get(
   },
 );
 
-// PATCH /api/decks/:id
-// Accessible via PATCH /api/decks/:id
-// JWT : S'assure que le token est valide
+/**
+ * @async
+ * @description Met à jour un deck existant (nom et cartes) par ID.
+ * Les cartes du deck sont remplacées intégralement si une nouvelle sélection est fournie.
+ * @requires JWT - Nécessite un jeton d'authentification valide via le middleware @see {@link authentificateToken}.
+ *
+ * @param {Request} req - L'objet de requête contenant l'ID du deck et les nouvelles données (name et cards).
+ * @param {Response} res - L'objet de réponse utilisé pour renvoyer les données JSON.
+ *
+ * @returns {Promise<Response>} Renvoie une réponse HTTP 200 si le deck a bien été mis à jour.
+ * @throws {400} Renvoie une erreur HTTP 400 si les champs obligatoires sont manquants ou si le nombre de cartes Pokémon est incorrect.
+ * @throws {401} Renvoie une erreur HTTP 401 si le jeton d'authentification est manquant ou invalide.
+ * @throws {403} Renvoie une erreur HTTP 403 si le deck n'appartient pas à l'utilisateur authentifié.
+ * @throws {404} Renvoie une erreur HTTP 404 si le deck n'existe pas.
+ * @throws {500} Renvoie une erreur HTTP 500 si une erreur se produit.
+ */
 decksRouter.patch(
   "/:id",
   authentificateToken,
@@ -229,9 +272,20 @@ decksRouter.patch(
   },
 );
 
-// DELETE /api/decks/:id
-// Accessible via DELETE /api/decks/:id
-// JWT : S'assure que le token est valide
+/**
+ * @async
+ * @description Supprime un deck et ses cartes associées par ID.
+ * @requires JWT - Nécessite un jeton d'authentification valide via le middleware @see {@link authentificateToken}.
+ *
+ * @param {Request} req - L'objet de requête contenant l'ID du deck à supprimer.
+ * @param {Response} res - L'objet de réponse utilisé pour renvoyer les données JSON.
+ *
+ * @returns {Promise<Response>} Renvoie une réponse HTTP 200 si le deck a bien été supprimé.
+ * @throws {401} Renvoie une erreur HTTP 401 si le jeton d'authentification est manquant ou invalide.
+ * @throws {403} Renvoie une erreur HTTP 403 si le deck n'appartient pas à l'utilisateur authentifié.
+ * @throws {404} Renvoie une erreur HTTP 404 si le deck n'existe pas.
+ * @throws {500} Renvoie une erreur HTTP 500 si une erreur se produit.
+ */
 decksRouter.delete(
   "/:id",
   authentificateToken,
