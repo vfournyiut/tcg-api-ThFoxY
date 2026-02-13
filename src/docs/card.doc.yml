@@ -16,6 +16,12 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Card"
+        "401":
+          description: Non authentifié ou token JWT invalide
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnauthorizedError"
         "500":
           description: Erreur serveur
           content:

@@ -72,6 +72,13 @@ components:
           type: string
           example: "Données manquantes"
 
+    UnauthorizedError:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Non authentifié ou token JWT invalide"
+
     ServerError:
       type: object
       properties:

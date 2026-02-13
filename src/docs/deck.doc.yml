@@ -1,21 +1,67 @@
 paths:
   /decks:
+    post:
+      tags:
+        - Decks
+      summary: Créer un nouveau deck
+      description: Crée un nouveau deck de 10 cartes pour l'utilisateur authentifié (nécessite une authentification JWT).
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Deck"
+      responses:
+        "201":
+          description: Deck créé avec succès
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Deck"
+        "400":
+          description: Le nom ou les cartes du deck sont manquants ou invalides.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestError"
+        "401":
+          description: Non authentifié ou token JWT invalide
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnauthorizedError"
+        "500":
+          description: Erreur serveur
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerError"
+
+  /decks/mine:
     get:
       tags:
         - Decks
-      summary: Opérations CRUD sur les decks de cartes Pokémon
-      description: Obtient toutes les cartes Pokémon disponibles (nécessite une authentification JWT).
+      summary: Récupérer mes decks
+      description: Liste tous les decks appartenant à l'utilisateur authentifié (nécessite une authentification JWT).
       security:
         - bearerAuth: []
       responses:
         "200":
-          description: Cartes obtenues avec succès
+          description: Liste des decks récupérés
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Card"
+                  $ref: "#/components/schemas/Deck"
+        "401":
+          description: Non authentifié ou token JWT invalide
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UnauthorizedError"
         "500":
           description: Erreur serveur
           content:
