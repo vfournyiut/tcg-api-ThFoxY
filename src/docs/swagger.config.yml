@@ -36,6 +36,28 @@ components:
           format: email
           example: "test@example.com"
 
+    Card:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Pikachu"
+        hp:
+          type: integer
+          example: 60
+        attack:
+          type: integer
+          example: 40
+        pokedexNumber:
+          type: integer
+          example: 25
+        imgUrl:
+          type: string
+          example: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png"
+
     BaseError:
       type: object
       properties:
