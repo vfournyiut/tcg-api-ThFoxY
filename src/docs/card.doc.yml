@@ -1,5 +1,5 @@
 paths:
-  /cards:
+  /api/cards:
     get:
       tags:
         - Cards

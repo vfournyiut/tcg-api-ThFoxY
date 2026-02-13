@@ -8,9 +8,9 @@ info:
     email: davidmel7562@gmail.com
 
 servers:
-  - url: http://localhost:3000
+  - url: http://localhost:3001
     description: Serveur de développement
-  - url: http://localhost:3000 # Pas encore hébergé, à adapter lors du déploiement Railway
+  - url: http://localhost:3001 # Pas encore hébergé, à adapter lors du déploiement Railway
     description: Serveur de production
 
 components:

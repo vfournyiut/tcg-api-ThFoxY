@@ -1,5 +1,5 @@
 paths:
-  /auth/sign-up:
+  /api/auth/sign-up:
     post:
       tags:
         - Authentication
@@ -66,7 +66,7 @@ paths:
         "500":
           $ref: "#/components/responses/ServerError"
 
-  /auth/sign-in:
+  /api/auth/sign-in:
     post:
       tags:
         - Authentication
