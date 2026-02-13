@@ -1,0 +1,122 @@
+paths:
+  /auth/sign-up:
+    post:
+      tags:
+        - Authentication
+      summary: Inscription utilisateur
+      description: Crée un nouvel utilisateur et lui associe un token JWT d'authentification.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - email
+                - password
+              properties:
+                username:
+                  type: string
+                  example: "test"
+                email:
+                  type: string
+                  format: email
+                  example: "test@example.com"
+                password:
+                  type: string
+                  format: password
+                  example: "password123"
+      responses:
+        "201":
+          description: Inscription réussie
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Inscription réussie"
+                  token:
+                    type: string
+                    example: "example-jwt-token"
+                  user:
+                    $ref: "#/components/schemas/User"
+        "400":
+          description: Données manquantes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Nom d'utilisateur ou email déjà utilisé
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Erreur serveur
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerError"
+
+  /auth/sign-in:
+    post:
+      tags:
+        - Authentication
+      summary: Connexion utilisateur
+      description: Connecte l'utilisateur et lui associe un token JWT d'authentification.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "test@example.com"
+                password:
+                  type: string
+                  format: password
+                  example: "password123"
+      responses:
+        "200":
+          description: Connexion réussie
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Connexion réussie"
+                  token:
+                    type: string
+                    example: "example-jwt-token"
+                  user:
+                    $ref: "#/components/schemas/User"
+        "400":
+          description: Données manquantes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Email ou mot de passe incorrect
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Erreur serveur
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerError"

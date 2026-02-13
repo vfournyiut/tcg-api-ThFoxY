@@ -1,0 +1,59 @@
+openapi: 3.0.0
+info:
+  title: API Documentation TCG Pokémon
+  version: 1.0.0
+  description: Documentation de l'API TCG Pokémon avec authentification JWT
+  contact:
+    name: ThFoxY
+    email: davidmel7562@gmail.com
+
+servers:
+  - url: http://localhost:3000
+    description: Serveur de développement
+  - url: http://localhost:3000 # Pas encore hébergé, à adapter lors du déploiement Railway
+    description: Serveur de production
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Token JWT à obtenir via /auth/sign-up ou /auth/sign-in"
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        username:
+          type: string
+          example: "test"
+        email:
+          type: string
+          format: email
+          example: "test@example.com"
+
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Message d'erreur"
+
+    ServerError:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Server error"
+
+tags:
+  - name: Authentication
+    description: Gestion de l'authentification (inscription et connexion) de l'utilisateur
+  - name: Cards
+    description: Gestion des cartes
+  - name: Decks
+    description: Gestion des decks
