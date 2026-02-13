@@ -2,8 +2,6 @@ import { Request, Response, Router } from "express";
 import { prisma } from "../../src/database";
 import { authentificateToken } from "../auth/auth.middleware";
 
-// TODO: Traduire en français les noms pour les erreurs serveur (500+)
-
 // Création du router pour les decks
 export const decksRouter = Router();
 
