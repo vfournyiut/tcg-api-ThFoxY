@@ -3,7 +3,7 @@ paths:
     post:
       tags:
         - Decks
-      summary: Créer un nouveau deck
+      summary: Création d'un nouveau deck
       description: Crée un nouveau deck de 10 cartes pour l'utilisateur authentifié (nécessite une authentification JWT).
       security:
         - bearerAuth: []
@@ -12,44 +12,80 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Deck"
+              type: object
+              required:
+                - name
+                - cards
+              properties:
+                name:
+                  type: string
+                  example: "My Test Deck"
+                userId:
+                  type: integer
+                  example: 1
+                cards:
+                  type: array
+                  minItems: 10
+                  maxItems: 10
+                  items:
+                    $ref: "#/components/schemas/Card"
+              example:
+                name: "My Test Deck"
+                cards: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
       responses:
         "201":
-          description: Deck créé avec succès
+          description: Deck créé avec succès.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Deck"
         "400":
-          description: Le nom ou les cartes du deck sont manquants ou invalides.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadRequestError"
+          $ref: "#/components/responses/BadRequestError"
         "401":
-          description: Non authentifié ou token JWT invalide
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/UnauthorizedError"
+          $ref: "#/components/responses/UnauthorizedError"
         "500":
-          description: Erreur serveur
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ServerError"
+          $ref: "#/components/responses/ServerError"
 
   /decks/mine:
     get:
       tags:
         - Decks
-      summary: Récupérer mes decks
+      summary: Récupération du ou des deck(s) de l'utilisateur authentifié
       description: Liste tous les decks appartenant à l'utilisateur authentifié (nécessite une authentification JWT).
       security:
         - bearerAuth: []
       responses:
         "200":
-          description: Liste des decks récupérés
+          description: Liste des decks récupérés.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DeckWithoutCards"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+  /decks/{id}:
+    get:
+      tags:
+        - Decks
+      summary: Informations détaillées d'un deck spécifique
+      description: Récupère un deck spécifique par ID (cartes incluses) pour l'utilisateur authentifié (nécessite une authentification JWT).
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID du deck à récupérer
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Deck récupéré avec succès.
           content:
             application/json:
               schema:
@@ -57,14 +93,95 @@ paths:
                 items:
                   $ref: "#/components/schemas/Deck"
         "401":
-          description: Non authentifié ou token JWT invalide
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/UnauthorizedError"
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
         "500":
-          description: Erreur serveur
+          $ref: "#/components/responses/ServerError"
+
+    patch:
+      tags:
+        - Decks
+      summary: Mise à jour d'un deck spécifique
+      description: Met à jour le nom ou les cartes d'un deck spécifique par ID pour l'utilisateur authentifié (nécessite une authentification JWT).
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID du deck à mettre à jour
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: "Updated Test Deck"
+                cards:
+                  type: array
+                  minItems: 10
+                  maxItems: 10
+                  items:
+                    $ref: "#/components/schemas/Card"
+              example:
+                name: "Updated Test Deck"
+                cards: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+      responses:
+        "200":
+          description: Deck mis à jour avec succès.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ServerError"
+                $ref: "#/components/schemas/Deck"
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/ServerError"
+
+    delete:
+      tags:
+        - Decks
+      summary: Suppression d'un deck spécifique
+      description: Supprime un deck spécifique par ID pour l'utilisateur authentifié (nécessite une authentification JWT).
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+          description: ID du deck à supprimer
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Deck supprimé avec succès.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Suppression réussie"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "403":
+          $ref: "#/components/responses/ForbiddenError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "500":
+          $ref: "#/components/responses/ServerError"

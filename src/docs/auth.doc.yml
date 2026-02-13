@@ -29,7 +29,7 @@ paths:
                   example: "password123"
       responses:
         "201":
-          description: Inscription réussie
+          description: Inscription réussie.
           content:
             application/json:
               schema:
@@ -52,23 +52,19 @@ paths:
                         format: email
                         example: "test@example.com"
         "400":
-          description: Le username, l'email ou le password est manquant ou invalide.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadRequestError"
+          $ref: "#/components/responses/BadRequestError"
         "409":
-          description: Nom d'utilisateur ou email déjà utilisé
+          description: Le nom d'utilisateur ou l'email est déjà utilisé.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Nom d'utilisateur déjà utilisé"
         "500":
-          description: Erreur serveur
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ServerError"
+          $ref: "#/components/responses/ServerError"
 
   /auth/sign-in:
     post:
@@ -96,7 +92,7 @@ paths:
                   example: "password123"
       responses:
         "200":
-          description: Connexion réussie
+          description: Connexion réussie.
           content:
             application/json:
               schema:
@@ -111,20 +107,16 @@ paths:
                   user:
                     $ref: "#/components/schemas/User"
         "400":
-          description: L'email ou le password est manquant ou invalide.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/BadRequestError"
+          $ref: "#/components/responses/BadRequestError"
         "401":
-          description: Email ou mot de passe incorrect
+          description: L'email ou le mot de passe est incorrect.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Email ou mot de passe incorrect"
         "500":
-          description: Erreur serveur
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ServerError"
+          $ref: "#/components/responses/ServerError"

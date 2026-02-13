@@ -9,7 +9,7 @@ paths:
         - bearerAuth: []
       responses:
         "200":
-          description: Cartes obtenues avec succès
+          description: Cartes obtenues avec succès.
           content:
             application/json:
               schema:
@@ -17,14 +17,6 @@ paths:
                 items:
                   $ref: "#/components/schemas/Card"
         "401":
-          description: Non authentifié ou token JWT invalide
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/UnauthorizedError"
+          $ref: "#/components/responses/UnauthorizedError"
         "500":
-          description: Erreur serveur
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ServerError"
+          $ref: "#/components/responses/ServerError"

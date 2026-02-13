@@ -22,6 +22,10 @@ components:
       description: "Token JWT à obtenir via /auth/sign-up ou /auth/sign-in"
 
   schemas:
+    # User: Représente un utilisateur de l'application
+    # - userId: Identifiant unique de l'utilisateur
+    # - username: Nom d'utilisateur choisi par l'utilisateur
+    # - email: Adresse email de l'utilisateur
     User:
       type: object
       properties:
@@ -36,6 +40,13 @@ components:
           format: email
           example: "test@example.com"
 
+    # Card: Représente une carte Pokémon
+    # - id: Identifiant unique de la carte
+    # - name: Nom de la carte Pokémon
+    # - hp: Points de vie de la carte
+    # - attack: Points d'attaque de la carte
+    # - pokedexNumber: Numéro de Pokédex de la carte
+    # - imgUrl: URL de l'image de la carte
     Card:
       type: object
       properties:
@@ -58,38 +69,116 @@ components:
           type: string
           example: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png"
 
-    BaseError:
+    # Deck: Représente un deck de cartes appartenant à un utilisateur
+    # - id: Identifiant unique du deck
+    # - name: Nom du deck choisi par l'utilisateur
+    # - userId: Identifiant de l'utilisateur propriétaire du deck
+    # - cards: Liste des cartes appartenant au deck (table de jointure entre Deck et Card)
+    Deck:
       type: object
       properties:
-        message:
+        id:
+          type: integer
+          example: 1
+        name:
           type: string
-          example: "Message d'erreur de base"
+          example: "My Test Deck"
+        userId:
+          type: integer
+          example: 1
+        cards:
+          type: array
+          items:
+            $ref: "#/components/schemas/Card"
+
+    # DeckWithoutCards: Représente un deck sans les cartes associées (utilisé pour les listes de decks sans détails)
+    # - id: Identifiant unique du deck
+    # - name: Nom du deck choisi par l'utilisateur
+    # - userId: Identifiant de l'utilisateur propriétaire du deck
+    DeckWithoutCards:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "My Test Deck"
+        userId:
+          type: integer
+          example: 1
+
+  responses:
+    BaseError:
+      description: Erreur de base.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Une erreur est survenue"
 
     BadRequestError:
-      type: object
-      properties:
-        message:
-          type: string
-          example: "Données manquantes"
+      description: Requête mal formée ou données invalides.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Données manquantes"
 
     UnauthorizedError:
-      type: object
-      properties:
-        message:
-          type: string
-          example: "Non authentifié ou token JWT invalide"
+      description: L'authentification JWT a échoué.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Token invalide ou expiré"
+
+    ForbiddenError:
+      description: L'utilisateur authentifié n'est pas le propriétaire du deck spécifié.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Deck inaccessible"
+
+    NotFoundError:
+      description: Le deck spécifié n'existe pas.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Deck introuvable"
 
     ServerError:
-      type: object
-      properties:
-        message:
-          type: string
-          example: "Server error"
+      description: Erreur interne côté serveur.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Server error"
 
 tags:
   - name: Authentication
-    description: Gestion de l'authentification (inscription et connexion) de l'utilisateur
+    description: Gestion de l'authentification (inscription et connexion) de l'utilisateur.
   - name: Cards
-    description: Gestion des cartes
+    description: Gestion des cartes.
   - name: Decks
-    description: Gestion des decks
+    description: Gestion des decks.
