@@ -25,7 +25,7 @@ components:
     User:
       type: object
       properties:
-        id:
+        userId:
           type: integer
           example: 1
         username:
@@ -36,19 +36,26 @@ components:
           format: email
           example: "test@example.com"
 
-    Error:
+    BaseError:
       type: object
       properties:
         message:
           type: string
-          example: "Message d'erreur"
+          example: "Message d'erreur de base"
+
+    BadRequestError:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Données manquantes"
 
     ServerError:
       type: object
       properties:
         message:
           type: string
-          example: Server error"
+          example: "Server error"
 
 tags:
   - name: Authentication

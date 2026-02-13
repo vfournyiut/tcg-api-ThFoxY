@@ -42,13 +42,21 @@ paths:
                     type: string
                     example: "example-jwt-token"
                   user:
-                    $ref: "#/components/schemas/User"
+                    type: object
+                    properties:
+                      username:
+                        type: string
+                        example: "test"
+                      email:
+                        type: string
+                        format: email
+                        example: "test@example.com"
         "400":
-          description: Données manquantes
+          description: Le username, l'email ou le password est manquant ou invalide.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadRequestError"
         "409":
           description: Nom d'utilisateur ou email déjà utilisé
           content:
@@ -103,11 +111,11 @@ paths:
                   user:
                     $ref: "#/components/schemas/User"
         "400":
-          description: Données manquantes
+          description: L'email ou le password est manquant ou invalide.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Error"
+                $ref: "#/components/schemas/BadRequestError"
         "401":
           description: Email ou mot de passe incorrect
           content:
