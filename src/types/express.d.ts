@@ -1,5 +1,6 @@
-import "express";
-import { Request } from "express";
+import 'express'
+
+import { Request } from 'express'
 
 /**
  * @description Extension de l'interface Request globale d'Express pour y inclure l'utilisateur authentifié.
@@ -7,12 +8,14 @@ import { Request } from "express";
  * @property {number} userId - L'ID de l'utilisateur authentifié.
  * @property {string} email - L'email de l'utilisateur authentifié.
  */
-declare module "express" {
-  interface Request {
-    user?: {
-      userId: number;
-      email: string;
-    };
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        userId: number
+        email: string
+      }
+    }
   }
 }
 
@@ -24,16 +27,16 @@ declare module "express" {
  * @property {string} username - Le nom d'utilisateur de l'utilisateur.
  */
 export interface SignUpRequestBody {
-  email: string;
-  password: string;
-  username: string;
+  email: string
+  password: string
+  username: string
 }
 
 /**
  * @description Type personnalisé utilisant SignUpRequestBody.
  * @extends Request
  */
-export interface SignUpRequest extends Request<{}, any, SignUpRequestBody> {}
+export interface SignUpRequest extends Request<{}, {}, SignUpRequestBody> {}
 
 /**
  * @description Typage pour la requête POST /sign-in.
@@ -42,12 +45,12 @@ export interface SignUpRequest extends Request<{}, any, SignUpRequestBody> {}
  * @property {string} username - Le nom d'utilisateur de l'utilisateur.
  */
 export interface SignInRequestBody {
-  email: string;
-  password: string;
+  email: string
+  password: string
 }
 
 /**
  * @description Type personnalisé utilisant SignInRequestBody.
  * @extends Request
  */
-export interface SignInRequest extends Request<{}, any, SignInRequestBody> {}
+export interface SignInRequest extends Request<{}, {}, SignInRequestBody> {}

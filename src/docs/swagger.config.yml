@@ -19,7 +19,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: "Token JWT à obtenir via /auth/sign-up ou /auth/sign-in"
+      description: 'Token JWT à obtenir via /auth/sign-up ou /auth/sign-in'
 
   schemas:
     # User: Représente un utilisateur de l'application
@@ -34,11 +34,11 @@ components:
           example: 1
         username:
           type: string
-          example: "test"
+          example: 'test'
         email:
           type: string
           format: email
-          example: "test@example.com"
+          example: 'test@example.com'
 
     # Card: Représente une carte Pokémon
     # - id: Identifiant unique de la carte
@@ -55,7 +55,7 @@ components:
           example: 1
         name:
           type: string
-          example: "Pikachu"
+          example: 'Pikachu'
         hp:
           type: integer
           example: 60
@@ -67,7 +67,7 @@ components:
           example: 25
         imgUrl:
           type: string
-          example: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png"
+          example: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png'
 
     # Deck: Représente un deck de cartes appartenant à un utilisateur
     # - id: Identifiant unique du deck
@@ -82,14 +82,14 @@ components:
           example: 1
         name:
           type: string
-          example: "My Test Deck"
+          example: 'My Test Deck'
         userId:
           type: integer
           example: 1
         cards:
           type: array
           items:
-            $ref: "#/components/schemas/Card"
+            $ref: '#/components/schemas/Card'
 
     # DeckWithoutCards: Représente un deck sans les cartes associées (utilisé pour les listes de decks sans détails)
     # - id: Identifiant unique du deck
@@ -103,7 +103,7 @@ components:
           example: 1
         name:
           type: string
-          example: "My Test Deck"
+          example: 'My Test Deck'
         userId:
           type: integer
           example: 1
@@ -118,7 +118,7 @@ components:
             properties:
               error:
                 type: string
-                example: "Une erreur est survenue"
+                example: 'Une erreur est survenue'
 
     BadRequestError:
       description: Requête mal formée ou données invalides.
@@ -129,7 +129,7 @@ components:
             properties:
               error:
                 type: string
-                example: "Données manquantes"
+                example: 'Données manquantes'
 
     UnauthorizedError:
       description: L'authentification JWT a échoué.
@@ -140,7 +140,7 @@ components:
             properties:
               error:
                 type: string
-                example: "Token invalide ou expiré"
+                example: 'Token invalide ou expiré'
 
     ForbiddenError:
       description: L'utilisateur authentifié n'est pas le propriétaire du deck spécifié.
@@ -151,7 +151,7 @@ components:
             properties:
               error:
                 type: string
-                example: "Deck inaccessible"
+                example: 'Deck inaccessible'
 
     NotFoundError:
       description: Le deck spécifié n'existe pas.
@@ -162,7 +162,7 @@ components:
             properties:
               error:
                 type: string
-                example: "Deck introuvable"
+                example: 'Deck introuvable'
 
     ServerError:
       description: Erreur interne côté serveur.
@@ -173,7 +173,7 @@ components:
             properties:
               error:
                 type: string
-                example: "Server error"
+                example: 'Server error'
 
 tags:
   - name: Authentication

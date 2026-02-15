@@ -18,17 +18,17 @@ paths:
               properties:
                 username:
                   type: string
-                  example: "test"
+                  example: 'test'
                 email:
                   type: string
                   format: email
-                  example: "test@example.com"
+                  example: 'test@example.com'
                 password:
                   type: string
                   format: password
-                  example: "password123"
+                  example: 'password123'
       responses:
-        "201":
+        '201':
           description: Inscription réussie.
           content:
             application/json:
@@ -37,23 +37,23 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: "Inscription réussie"
+                    example: 'Inscription réussie'
                   token:
                     type: string
-                    example: "example-jwt-token"
+                    example: 'example-jwt-token'
                   user:
                     type: object
                     properties:
                       username:
                         type: string
-                        example: "test"
+                        example: 'test'
                       email:
                         type: string
                         format: email
-                        example: "test@example.com"
-        "400":
-          $ref: "#/components/responses/BadRequestError"
-        "409":
+                        example: 'test@example.com'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '409':
           description: Le nom d'utilisateur ou l'email est déjà utilisé.
           content:
             application/json:
@@ -63,8 +63,8 @@ paths:
                   error:
                     type: string
                     example: "Nom d'utilisateur déjà utilisé"
-        "500":
-          $ref: "#/components/responses/ServerError"
+        '500':
+          $ref: '#/components/responses/ServerError'
 
   /api/auth/sign-in:
     post:
@@ -85,13 +85,13 @@ paths:
                 email:
                   type: string
                   format: email
-                  example: "test@example.com"
+                  example: 'test@example.com'
                 password:
                   type: string
                   format: password
-                  example: "password123"
+                  example: 'password123'
       responses:
-        "200":
+        '200':
           description: Connexion réussie.
           content:
             application/json:
@@ -100,15 +100,15 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: "Connexion réussie"
+                    example: 'Connexion réussie'
                   token:
                     type: string
-                    example: "example-jwt-token"
+                    example: 'example-jwt-token'
                   user:
-                    $ref: "#/components/schemas/User"
-        "400":
-          $ref: "#/components/responses/BadRequestError"
-        "401":
+                    $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
           description: L'email ou le mot de passe est incorrect.
           content:
             application/json:
@@ -117,6 +117,6 @@ paths:
                 properties:
                   error:
                     type: string
-                    example: "Email ou mot de passe incorrect"
-        "500":
-          $ref: "#/components/responses/ServerError"
+                    example: 'Email ou mot de passe incorrect'
+        '500':
+          $ref: '#/components/responses/ServerError'
