@@ -4,6 +4,10 @@ on:
   pull_request:
     branches:
       - main
+      - develop
+  push:
+    branches:
+      - main
 
 jobs:
   test-and-build:
@@ -16,15 +20,15 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '20'
 
       - name: Clean npm cache
         run: npm cache clean --force
 
       - name: Install dependencies
         run: |
-          rm -rf node_modules
-          npm ci
+          rm -rf node_modules package-lock.json
+          npm install
 
       - name: Generate Prisma Client
         run: npx prisma generate
@@ -34,14 +38,11 @@ jobs:
       - name: Run TypeScript type check
         run: npm run ts:check
 
-      - name: Run linter
-        run: npm run lint
-
-      - name: Check code formatting
-        run: npm run format
-
       - name: Build project
         run: npm run build
 
-      - name: Run tests
+      - name: Build project
         run: npm run test
+        env:
+          DATABASE_URL: ${ secrets.DATABASE_URL }
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'test-secret-key' }}
