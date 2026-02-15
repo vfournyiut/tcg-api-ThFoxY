@@ -4,18 +4,18 @@
   "author": "",
   "description": "TCG Pokemon-like Backend Server",
   "main": "dist/index.js",
+  "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "ts:check": "tsc --noEmit",
     "start": "node dist/index.js",
     "test": "vitest --coverage --run",
-    "test:ui": "vitest --ui",
+    "test:ui": "vitest --ui --coverage",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test:ui": "vitest --ui --coverage",
     "db:start": "docker compose up -d",
     "db:stop": "docker compose down",
     "db:generate": "prisma generate",
@@ -56,6 +56,7 @@
     "@types/supertest": "6.0.3",
     "@types/swagger-ui-express": "4.1.8",
     "@types/uuid": "10.0.0",
+    "@types/yamljs": "^0.2.34",
     "@vitest/coverage-v8": "4.0.15",
     "@vitest/ui": "4.0.15",
     "eslint": "9.39.2",
@@ -70,6 +71,7 @@
     "typescript-eslint": "^8.54.0",
     "vite-tsconfig-paths": "5.1.4",
     "vitest": "4.0.15",
-    "vitest-mock-extended": "3.1.0"
+    "vitest-mock-extended": "3.1.0",
+    "yamljs": "^0.3.0"
   }
 }

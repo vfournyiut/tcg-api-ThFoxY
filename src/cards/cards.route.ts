@@ -1,9 +1,10 @@
-import { Request, Response, Router } from "express";
-import { prisma } from "../../src/database";
-import { authentificateToken } from "../auth/auth.middleware";
+import { Request, Response, Router } from 'express'
+
+import { prisma } from '../../src/database'
+import { authentificateToken } from '../auth/auth.middleware'
 
 // Création du router pour les cartes Pokémon
-export const cardsRouter = Router();
+export const cardsRouter = Router()
 
 /**
  * @async
@@ -21,7 +22,7 @@ export const cardsRouter = Router();
  * Response: [{ "id": 1, "name": "Bulbasaur", ... }, { "id": 2, "name": "Ivysaur", ... }, ...]
  */
 cardsRouter.get(
-  "/",
+  '/',
   authentificateToken,
   async (_req: Request, res: Response) => {
     // Récupérer toutes les cartes Pokémon
@@ -29,15 +30,15 @@ cardsRouter.get(
       const cards = await prisma.card.findMany({
         // Trier les cartes Pokémon par ordre croissant de numéro Pokédex
         orderBy: {
-          pokedexNumber: "asc",
+          pokedexNumber: 'asc',
         },
-      });
+      })
 
       // Retourner les cartes Pokémon
-      return res.status(200).json(cards);
+      return res.status(200).json(cards)
     } catch (error) {
-      console.error("Error when getting Pokémon cards:", error);
-      return res.status(500).json({ error: "Server error" });
+      console.error('Error when getting Pokémon cards:', error)
+      return res.status(500).json({ error: 'Server error' })
     }
   },
-);
+)
