@@ -55,20 +55,22 @@ app.get('/api/health', (_req, res) => {
 })
 
 // Créer un serveur HTTP à partir de l'application Express
-const httpServer = createServer(app)
+if (process.argv[1].endsWith('index.ts')) {
+  const httpServer = createServer(app)
 
-// Créer une instance de SocketServer pour gérer les connexions Socket.io
-new SocketServer(httpServer)
+  // Créer une instance de SocketServer pour gérer les connexions Socket.io
+  new SocketServer(httpServer)
 
-// Démarrer le serveur HTTP
-try {
-  httpServer.listen(env.PORT, () => {
-    console.log(`\n🚀 Server is running on http://localhost:${env.PORT}`)
-    console.log(
-      `🧪 Socket.io Test Client available at http://localhost:${env.PORT}`,
-    )
-  })
-} catch (error) {
-  console.error('Failed to start server:', error)
-  process.exit(1)
+  // Démarrer le serveur HTTP
+  try {
+    httpServer.listen(env.PORT, () => {
+      console.log(`\n🚀 Server is running on http://localhost:${env.PORT}`)
+      console.log(
+        `🧪 Socket.io Test Client available at http://localhost:${env.PORT}`,
+      )
+    })
+  } catch (error) {
+    console.error('Failed to start server:', error)
+    process.exit(1)
+  }
 }
