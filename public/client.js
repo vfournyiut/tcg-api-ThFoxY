@@ -57,6 +57,7 @@ function connectWithToken(token) {
 
   socket.on('connect', () => {
     log('Connected', 'received')
+    socket.emit('user', '')
     document.getElementById('status').textContent = 'Connected'
     document.getElementById('status').className = 'status connected'
     document.getElementById('connectBtn').disabled = true

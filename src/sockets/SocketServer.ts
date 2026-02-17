@@ -73,12 +73,15 @@ export class SocketServer {
    */
   private setupAuthMiddleware(): void {
     this.io.use((socket, next) => {
+      // 1. Récupérer le token JWT envoyé par le client dans les données d'authentification du handshake
       const token = socket.handshake.auth.token
 
+      // 2. Vérifier que le token est présent
       if (!token) {
         return next(new Error('Token manquant'))
       }
 
+      // 3. Vérifier la validité du token et extraire les données utilisateur
       try {
         const decoded = jwt.verify(
           token,
@@ -89,6 +92,7 @@ export class SocketServer {
         socket.data = decoded
         next()
       } catch (_error) {
+        // Si le token est invalide ou expiré, rejeter la connexion avec une erreur
         next(new Error('Token invalide ou expiré'))
       }
     })
@@ -107,10 +111,10 @@ export class SocketServer {
       console.log('Nouvelle connexion :', socket.id, `(${userData.email})`)
 
       // Envoyer un événement uniquement à ce client
-      socket.emit('welcome', `Bienvenue ${userData.email}!`)
+      socket.emit('welcome', `Bienvenue ${userData.email} !`)
 
       // Gérer les événements envoyés par le client
-      socket.on('user', (_username) => this.handleUser(socket, userData))
+      socket.on('user', () => this.handleUser(socket, userData))
       socket.on('disconnect', () => this.handleDisconnect(socket))
       socket.on('error', (error) => this.handleError(socket, error))
     })
