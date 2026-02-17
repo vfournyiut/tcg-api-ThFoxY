@@ -3,7 +3,7 @@ import { Response, Router } from 'express'
 import jwt from 'jsonwebtoken'
 
 import { prisma } from '../../src/database'
-import { SignInRequest,SignUpRequest } from '../types/express'
+import { SignInRequest, SignUpRequest } from '../types/express'
 
 // Création du router pour l'authentification
 export const authRouter = Router()
