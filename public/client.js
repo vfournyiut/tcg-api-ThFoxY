@@ -57,9 +57,10 @@ function connectWithToken(token) {
 
   socket.on('connect', () => {
     log('Connected', 'received')
-    socket.emit('user', '')
+    socket.emit('user')
     document.getElementById('status').textContent = 'Connected'
     document.getElementById('status').className = 'status connected'
+    document.getElementById('signInBtn').disabled = true
     document.getElementById('connectBtn').disabled = true
     document.getElementById('disconnectBtn').disabled = false
   })
@@ -68,6 +69,7 @@ function connectWithToken(token) {
     log('Disconnected', 'error')
     document.getElementById('status').textContent = 'Disconnected'
     document.getElementById('status').className = 'status disconnected'
+    document.getElementById('signInBtn').disabled = false
     document.getElementById('connectBtn').disabled = false
     document.getElementById('disconnectBtn').disabled = true
   })
