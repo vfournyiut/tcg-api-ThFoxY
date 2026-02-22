@@ -97,13 +97,13 @@ document.getElementById('disconnectBtn').addEventListener('click', () => {
 
 // Room events
 function getRooms() {
-  if (!socket) return alert('Not connected')
+  if (!socket || !socket.connected) return alert('Not connected')
   log('➡️ getRooms', 'sent')
   socket.emit('getRooms')
 }
 
 function createRoom() {
-  if (!socket) return alert('Not connected')
+  if (!socket || !socket.connected) return alert('Not connected')
   const deckId = document.getElementById('createRoomDeckId').value
   if (!deckId) return alert('Deck ID required')
 
@@ -113,7 +113,7 @@ function createRoom() {
 }
 
 function joinRoom() {
-  if (!socket) return alert('Not connected')
+  if (!socket || !socket.connected) return alert('Not connected')
   const roomId = document.getElementById('joinRoomId').value
   const deckId = document.getElementById('joinRoomDeckId').value
   if (!roomId || !deckId) return alert('Room ID and Deck ID required')
@@ -125,7 +125,7 @@ function joinRoom() {
 
 // Game events
 function drawCards() {
-  if (!socket) return alert('Not connected')
+  if (!socket || !socket.connected) return alert('Not connected')
   const roomId = document.getElementById('drawCardsRoomId').value
   if (!roomId) return alert('Room ID required')
 
@@ -135,7 +135,7 @@ function drawCards() {
 }
 
 function playCard() {
-  if (!socket) return alert('Not connected')
+  if (!socket || !socket.connected) return alert('Not connected')
   const roomId = document.getElementById('playCardRoomId').value
   const cardIndex = parseInt(document.getElementById('playCardIndex').value)
   if (!roomId || isNaN(cardIndex))
@@ -147,7 +147,7 @@ function playCard() {
 }
 
 function attack() {
-  if (!socket) return alert('Not connected')
+  if (!socket || !socket.connected) return alert('Not connected')
   const roomId = document.getElementById('attackRoomId').value
   if (!roomId) return alert('Room ID required')
 
@@ -157,7 +157,7 @@ function attack() {
 }
 
 function endTurn() {
-  if (!socket) return alert('Not connected')
+  if (!socket || !socket.connected) return alert('Not connected')
   const roomId = document.getElementById('endTurnRoomId').value
   if (!roomId) return alert('Room ID required')
 
