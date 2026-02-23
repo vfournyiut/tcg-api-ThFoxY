@@ -256,7 +256,7 @@ export class SocketServer {
 
     // 1. Vérifier la validité du deck
     const deck = await prisma.deck.findUnique({
-      where: { id: deckId },
+      where: { id: Number(deckId) },
       include: { cards: true },
     })
 
@@ -277,7 +277,7 @@ export class SocketServer {
     }
 
     // 3. Créer la nouvelle salle et y ajouter l'utilisateur
-    const roomId = `room-${String(deckId)}-${userData.userId}` // Générer un ID de salle unique basé sur l'ID du deck et de l'utilisateur
+    const roomId = `room-${String(deckId)}-${userData.email}` // Générer un ID de salle unique basé sur l'ID du deck et de l'utilisateur
     this.rooms.set(roomId, { users: new Set([socket.id]) })
     this.userRooms.set(userData.userId, roomId)
     socket.join(roomId) // Rejoindre la salle
@@ -329,7 +329,7 @@ export class SocketServer {
 
     // 3. Vérifier la validité du deck
     const deck = await prisma.deck.findUnique({
-      where: { id: deckId },
+      where: { id: Number(deckId) },
       include: { cards: true },
     })
 
