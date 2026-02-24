@@ -1,0 +1,190 @@
+import { prisma } from '../database'
+
+/**
+ * @description Typage des données de l'entraîneur
+ * @interface TrainerData
+ *
+ * @property {number} userId - L'identifiant unique de l'utilisateur.
+ * @property {string} email - L'adresse email de l'utilisateur.
+ * @property {string} [username] - Le nom d'utilisateur (optionnel).
+ *
+ * @property {string} socketId - L'identifiant de la connexion Socket.io.
+ * @property {number} deckId - L'identifiant du deck de cartes Pokémon utilisé par l'entraîneur.
+ * @property {number[]} deckCards - Les IDs des cartes Pokémon restantes dans le deck (pioche).
+ * @property {number[]} handCards - Les IDs des cartes Pokémon actuellement en main (maximum 5).
+ * @property {number} fieldCard - L'ID de la carte Pokémon active sur le terrain (0 si aucune).
+ * @property {number} score - Le score actuel de l'entraîneur (1 point par carte adverse vaincue).
+ */
+interface TrainerData {
+  userId: number
+  email: string
+  username?: string
+
+  socketId: string
+  deckId: number
+  deckCards: number[]
+  handCards: number[]
+  fieldCard: number
+  score: number
+}
+
+/**
+ * @description Typage des données de l'état du jeu pour un entraîneur, renvoyées au client.
+ * La main et le deck de l'adversaire ne sont jamais exposés.
+ * @interface ClientGameState
+ *
+ * @property {boolean} clientTurn - Indique si c'est le tour du client.
+ * @property {number[]} clientDeckCards - Les IDs des cartes restantes dans le deck du client (pioche).
+ * @property {number[]} clientHand - Les IDs des cartes en main du client (maximum 5).
+ * @property {number} clientFieldCard - L'ID de la carte Pokémon active sur le terrain du client (0 si aucune).
+ * @property {number} clientScore - Le score actuel du client (1 point par carte adverse vaincue).
+ *
+ * @property {number} opponentFieldCard - L'ID de la carte Pokémon active sur le terrain de l'adversaire (0 si aucune).
+ * @property {number} opponentScore - Le score actuel de l'adversaire (1 point par carte adverse vaincue).
+ * @property {number} opponentHandCount - Le nombre de cartes actuellement en main de l'adversaire (sans les IDs).
+ * @property {number} opponentDeckCount - Le nombre de cartes restantes dans le deck de l'adversaire (sans les IDs).
+ */
+export interface ClientGameState {
+  clientTurn: boolean
+  clientDeckCards: number[]
+  clientHandCards: number[]
+  clientFieldCard: number
+  clientScore: number
+
+  opponentFieldCard: number
+  opponentScore: number
+  opponentHandCount: number
+  opponentDeckCount: number
+}
+
+/**
+ * @description Classe GameLogic pour gérer la logique du jeu.
+ * @class GameLogic
+ */
+export class GameLogic {
+  // Constructor parameter, so no need to store it in a property
+  private trainers: Map<string, TrainerData> // socketId -> TrainerData
+  private turn: string // socketId de l'entraîneur dont c'est le tour
+
+  /**
+   * @description Constructeur de la classe GameLogic. Initialise les propriétés de la partie.
+   * @constructor
+   *
+   * @param {string} roomId - L'identifiant de la salle de jeu.
+   */
+  constructor(_roomId: string) {
+    this.trainers = new Map()
+    this.turn = ''
+  }
+
+  /**
+   * @description Méthode pour initialiser la partie.
+   * @async
+   */
+  public async initializeGame(): Promise<void> {
+    // 1. Récupérer les IDs de socket des entraîneurs
+    const [firstSocketId] = this.trainers.keys()
+    this.turn = firstSocketId // Le premier entraîneur (host) commence toujours la partie
+
+    // 2. Charger les decks pour chaque entraîneur
+    for (const [_socketId, trainer] of this.trainers) {
+      const deck = await prisma.deck.findUnique({
+        where: { id: Number(trainer.deckId) },
+        include: { cards: true },
+      })
+
+      // Mélanger le deck aléatoirement
+      const cardIds = deck!.cards.map((deckCard) => deckCard.cardId)
+      cardIds.sort(() => Math.random() - 0.5) // Vu dans `seed.ts` ^^
+
+      trainer.deckCards = cardIds
+      trainer.handCards = []
+      trainer.fieldCard = 0
+      trainer.score = 0
+    }
+  }
+
+  /**
+   * @description Méthode pour gérer l'ajout d'un entraîneur à la partie.
+   * @public
+   *
+   * @param {TrainerData} trainerData - Les données de l'entraîneur à ajouter.
+   */
+  public addTrainer(trainerData: TrainerData): void {
+    this.trainers.set(trainerData.socketId, trainerData)
+  }
+
+  /**
+   * @description Méthode pour gérer la pioche des cartes depuis le deck jusqu'à avoir 5 cartes en main.
+   * @public
+   *
+   * @param {string} socketId - L'ID du socket de l'entraîneur qui pioche.
+   * @throws {Error} Si l'entraîneur est introuvable, si ce n'est pas son tour, ou si sa main est déjà pleine.
+   */
+  public drawCards(socketId: string): void {
+    // 1. Vérifier que l'entraîneur existe
+    const trainer = this.trainers.get(socketId)
+    if (!trainer) throw new Error('Joueur introuvable')
+
+    // 2. Vérifier que c'est le tour de l'entraîneur
+    if (this.turn !== socketId) throw new Error('Halte ! attendez votre tour !')
+
+    // 3. Vérifier que la main n'est pas déjà pleine
+    if (trainer.handCards.length >= 5)
+      throw new Error('Votre main est déjà pleine (5 cartes maximum)')
+
+    // Piocher des cartes jusqu'à avoir 5 cartes en main ou jusqu'à épuiser le deck
+    while (trainer.handCards.length < 5 && trainer.deckCards.length > 0) {
+      // Shift() permet de retirer la première carte du deck et de la retourner. Étant donné que le deck a été mélangé au préalable, cela simule une pioche aléatoire.
+      const card = trainer.deckCards.shift()!
+      trainer.handCards.push(card) // Ajouter la carte piochée à la main de l'entraîneur
+    }
+  }
+
+  /**
+   * @description Méthode pour gérer l'état de jeu pour un entraîneur donné.
+   * La main et le deck de l'adversaire ne sont jamais exposés.
+   * @public
+   *
+   * @param {string} socketId - L'ID du socket de l'entraîneur.
+   * @returns {ClientGameState} L'état de jeu du point de vue de l'entraîneur.
+   * @throws {Error} Si l'entraîneur ou l'adversaire est introuvable.
+   */
+  public getGameStateFor(socketId: string): ClientGameState {
+    // 1. Vérifier que l'entraîneur existe
+    const trainer = this.trainers.get(socketId)
+    if (!trainer) throw new Error('Joueur introuvable')
+
+    // 2. Trouver l'adversaire (l'autre entraîneur dans la partie)
+    const opponent = [...this.trainers.values()].find(
+      (o) => o.socketId !== socketId, // L'ID de socket est différent, c'est donc l'adversaire !
+    )
+
+    // 3. Vérifier que l'adversaire existe
+    if (!opponent) throw new Error('Adversaire introuvable')
+
+    // 4. Construire et retourner l'état de jeu du point de vue de l'entraîneur
+    return {
+      clientTurn: this.turn === socketId,
+      clientDeckCards: [...trainer.deckCards],
+      clientHandCards: [...trainer.handCards],
+      clientFieldCard: trainer.fieldCard,
+      clientScore: trainer.score,
+
+      opponentFieldCard: opponent.fieldCard,
+      opponentScore: opponent.score,
+      opponentHandCount: opponent.handCards.length,
+      opponentDeckCount: opponent.deckCards.length,
+    }
+  }
+
+  /**
+   * @description Retourne les IDs de socket de tous les joueurs de la partie.
+   * @public
+   *
+   * @returns {string[]} La liste des IDs de socket des joueurs.
+   */
+  public getTrainerSocketIds(): string[] {
+    return [...this.trainers.keys()]
+  }
+}

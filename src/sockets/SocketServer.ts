@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken'
 import { Server, Socket } from 'socket.io'
 
 import { prisma } from '../database'
+import { ClientGameState, GameLogic } from './GameLogic'
 
 /**
  * @description Typage pour les événements client -> serveur.
@@ -13,6 +14,7 @@ import { prisma } from '../database'
  * @property {function} createRoom - Un utilisateur demande la création d'une nouvelle salle, avec l'ID du deck utilisé en paramètre.
  * @property {function} joinRoom - Un utilisateur a rejoint une salle, avec l'ID de la salle et l'ID du deck utilisé en paramètre.
  * @property {function} leaveRoom - Un utilisateur a quitté une salle, avec l'ID de la salle en paramètre.
+ * @property {function} drawCards - Un entraîneur demande à piocher des cartes jusqu'à avoir 5 cartes en main.
  */
 interface ClientToServerEvents {
   user: () => void
@@ -20,6 +22,7 @@ interface ClientToServerEvents {
   createRoom: (data: { deckId: number }) => void
   joinRoom: (data: { roomId: string; deckId: number }) => void
   leaveRoom: (roomId: string) => void
+  drawCards: () => void
 }
 
 /**
@@ -33,7 +36,8 @@ interface ClientToServerEvents {
  * @property {function} roomJoined - Envoie les données de la salle rejointe au client qui vient de la rejoindre, et informe les autres clients de la salle que le nouvel utilisateur a rejoint. Les données de la salle contiennent le nom de la salle et la liste des utilisateurs présents dans la salle.
  * @property {function} roomUserJoined - Envoie un message à tous les clients d'une salle lorsqu'un nouvel utilisateur rejoint la salle, avec l'email de l'utilisateur en paramètre.
  * @property {function} roomUserLeft - Envoie un message à tous les clients d'une salle lorsqu'un utilisateur quitte la salle, avec l'email de l'utilisateur en paramètre.
- * @property {function} gameStarted - Envoie l'état initial de la partie démarrée à tous les clients de la salle. Les données contiennent le nom de la salle, la liste des utilisateurs présents dans la salle, et les IDs des decks utilisés par chaque joueur.
+ * @property {function} gameStarted - Envoie l'état initial de la partie démarrée à tous les clients de la salle. Les données contiennent le nom de la salle, la liste des utilisateurs présents dans la salle, et les IDs des decks utilisés par chaque entraîneur.
+ * @property {function} gameStateUpdated - Envoie l'état du jeu mis à jour à l'entraîneur concerné.
  * @property {function} error - Envoie un message en cas d'erreur, avec le message d'erreur en paramètre.
  */
 interface ServerToClientEvents {
@@ -56,11 +60,12 @@ interface ServerToClientEvents {
     deck1: number
     deck2: number
   }) => void
+  gameStateUpdated: (state: ClientGameState) => void
   error: (message: string) => void
 }
 
 /**
- * @description Typage des données utilisateur stockées dans le socket.
+ * @description Typage des données de l'utilisateur, stockées dans le socket.
  * @interface UserData
  *
  * @property {number} userId - L'identifiant unique de l'utilisateur.
@@ -97,9 +102,12 @@ export class SocketServer {
   private rooms: Map<string, RoomData> // roomId -> données de la salle
   private connectedUsers: Map<number, string> // userId -> socketId
   private userRooms: Map<number, string> // userId -> roomId
+  private games: Map<string, GameLogic> // roomId -> GameLogic
 
   /**
    * @description Constructeur de la classe SocketServer. Initialise Socket.io et configure les événements de connexion.
+   * @constructor
+   *
    * @param {HTTPServer} httpServer - Le serveur HTTP sur lequel Socket.io doit être attaché.
    */
   constructor(httpServer: HTTPServer) {
@@ -117,6 +125,7 @@ export class SocketServer {
     this.rooms = new Map()
     this.connectedUsers = new Map()
     this.userRooms = new Map()
+    this.games = new Map()
 
     this.setupAuthMiddleware() // Configure le middleware d'authentification pour Socket.io
     this.initializeSocket() // Configure les événements de connexion Socket.io
@@ -185,6 +194,7 @@ export class SocketServer {
       socket.on('leaveRoom', (roomId) =>
         this.handleLeaveRoom(socket, userData, roomId),
       )
+      socket.on('drawCards', () => this.handleDrawCards(socket))
       socket.on('disconnect', () => this.handleDisconnect(socket))
       socket.on('error', (error) => this.handleError(socket, error))
     })
@@ -370,7 +380,39 @@ export class SocketServer {
     if (roomData.users.size === 2) {
       const users = this.getRoomUsers(roomId) // Récupérer la liste des utilisateurs présents dans la salle
 
-      // Envoyer l'état initial de la partie à tous les clients de la salle
+      // 1. Créer une instance de la logique de jeu pour cette salle
+      const game = new GameLogic(roomId)
+      const [hostSocketId, guestSocketId] = roomData.users // Récupérer les IDs des sockets du host et du guest
+
+      // 2. Récupérer les données du host à partir du socket (les données du guest sont déjà stockées dans userData)
+      const hostSocket = this.io.sockets.sockets.get(hostSocketId)
+      const hostData = hostSocket?.data as UserData
+
+      // 3. Ajouter les deux joueurs à la logique de jeu avec leurs données respectives (ID du deck, main vide, aucune carte active sur le terrain, score à 0)
+      game.addTrainer({
+        ...hostData,
+        socketId: hostSocketId,
+        deckId: parseInt(roomId.split('-')[1]), // Le deck du host est extrait de l'ID de la salle (c'est intelligent ^^)
+        deckCards: [],
+        handCards: [],
+        fieldCard: 0,
+        score: 0,
+      })
+      game.addTrainer({
+        ...userData,
+        socketId: guestSocketId,
+        deckId: deckId, // Le deck de l'adversaire est celui envoyé par l'utilisateur qui vient de rejoindre
+        deckCards: [],
+        handCards: [],
+        fieldCard: 0,
+        score: 0,
+      })
+
+      // 4. Initialiser la partie
+      game.initializeGame()
+      this.games.set(roomId, game) // Associer la logique de jeu à la salle
+
+      // 5. Envoyer l'état initial de la partie à tous les clients de la salle
       this.io.to(roomId).emit('gameStarted', {
         room: roomId,
         users,
@@ -418,6 +460,38 @@ export class SocketServer {
     if (roomData.users.size === 0) {
       this.rooms.delete(roomId)
       console.log(`La salle ${roomId} a été supprimée`)
+    }
+  }
+
+  /**
+   * @description Méthode pour gérer l'événement `drawCards` -> pioche des cartes depuis le deck jusqu'à avoir 5 cartes en main.
+   * @private
+   *
+   * @param {TypedSocket} socket - Le socket du client qui a envoyé l'événement.
+   */
+  private handleDrawCards(socket: TypedSocket): boolean | void {
+    const userData = socket.data as UserData
+
+    // 1. Vérifier que l'entraineur est dans une salle avec une partie en cours
+    const roomId = this.userRooms.get(userData.userId)
+    if (!roomId) return socket.emit('error', 'Salle introuvable')
+
+    const game = this.games.get(roomId)
+    if (!game) return socket.emit('error', 'Partie introuvable')
+
+    // 2. Pioche (lève des erreurs gérées par la logique du jeu).
+    try {
+      game.drawCards(socket.id)
+    } catch (error) {
+      return socket.emit('error', (error as Error).message)
+    }
+
+    // 3. Envoyer l'état mis à jour à chaque entraîneur séparément afin de garder la main et le deck non exposés à l'autre entraîneur.
+    for (const socketId of game.getTrainerSocketIds()) {
+      const clientSocket = this.io.sockets.sockets.get(socketId) // Récupérer le socket de l'entraîneur à partir de son ID de socket
+      if (clientSocket) {
+        clientSocket.emit('gameStateUpdated', game.getGameStateFor(socketId))
+      }
     }
   }
 
