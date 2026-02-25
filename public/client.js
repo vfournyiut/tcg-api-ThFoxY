@@ -141,6 +141,7 @@ function playCard() {
   if (!roomId || isNaN(cardIndex))
     return alert('Room ID and Card Index required')
 
+  // TODO: roomId est inutile non ? Étant donné qu'une partie est liée à une salle.
   const data = { roomId, cardIndex }
   log(`➡️ playCard: ${JSON.stringify(data)}`, 'sent')
   socket.emit('playCard', data)

@@ -114,8 +114,10 @@ export class GameLogic {
     this.trainers.set(trainerData.socketId, trainerData)
   }
 
+  // TODO: Éviter la redondance de code pour les vérifications 'Entraîneur introuvable' ou 'Halte ! attendez votre tour !'
+
   /**
-   * @description Méthode pour gérer la pioche des cartes depuis le deck jusqu'à avoir 5 cartes en main.
+   * @description Méthode pour gérer l'événement `drawCards` -> pioche des cartes depuis le deck jusqu'à avoir 5 cartes en main.
    * @public
    *
    * @param {string} socketId - L'ID du socket de l'entraîneur qui pioche.
@@ -124,20 +126,78 @@ export class GameLogic {
   public drawCards(socketId: string): void {
     // 1. Vérifier que l'entraîneur existe
     const trainer = this.trainers.get(socketId)
-    if (!trainer) throw new Error('Joueur introuvable')
+    if (!trainer) throw new Error('Entraîneur introuvable')
 
     // 2. Vérifier que c'est le tour de l'entraîneur
     if (this.turn !== socketId) throw new Error('Halte ! attendez votre tour !')
 
     // 3. Vérifier que la main n'est pas déjà pleine
     if (trainer.handCards.length >= 5)
-      throw new Error('Votre main est déjà pleine (5 cartes maximum)')
+      throw new Error('Main pleine (5 cartes maximum)')
 
     // Piocher des cartes jusqu'à avoir 5 cartes en main ou jusqu'à épuiser le deck
     while (trainer.handCards.length < 5 && trainer.deckCards.length > 0) {
       // Shift() permet de retirer la première carte du deck et de la retourner. Étant donné que le deck a été mélangé au préalable, cela simule une pioche aléatoire.
       const card = trainer.deckCards.shift()!
       trainer.handCards.push(card) // Ajouter la carte piochée à la main de l'entraîneur
+    }
+  }
+
+  /**
+   * @description Méthode pour gérer l'événement `playCard` -> jouer une carte de la main sur le terrain.
+   * @public
+   *
+   * @param {string} socketId - L'ID du socket de l'entraîneur qui joue la carte.
+   * @param {number} cardIndex - L'index de la carte dans la main de l'entraîneur (0 à 4).
+   * @returns {ClientGameState} L'état de jeu du point de vue de l'entraîneur.
+   * @throws {Error} Si l'entraîneur est introuvable, si ce n'est pas son tour, ou si la carte n'est pas en main.
+   */
+  public playCard(
+    socketId: string,
+    data: { roomId: string; cardIndex: number },
+  ): ClientGameState {
+    // 1. Vérifier que l'entraîneur existe
+    const trainer = this.trainers.get(socketId)
+    if (!trainer) throw new Error('Entraîneur introuvable')
+
+    // 2. Vérifier que c'est le tour de l'entraîneur
+    if (this.turn !== socketId) throw new Error('Halte ! attendez votre tour !')
+
+    // 3. Vérifier qu'il n'y a pas déjà une carte active sur le terrain
+    if (trainer.fieldCard !== 0)
+      throw new Error('Carte déjà active sur le terrain')
+
+    // 3. Vérifier que la carte est bien en main de l'entraîneur
+    console.log("Main de l'entraîneur :", trainer.handCards)
+    if (data.cardIndex < 0 || data.cardIndex >= trainer.handCards.length)
+      throw new Error('Carte introuvable')
+
+    // 4. Retirer la carte active de la main et la placer sur le terrain
+    // Splice() permet de retirer la carte de la main de l'entraîneur à l'index trouvé précédemment.
+    const playedCardId = trainer.handCards.splice(data.cardIndex, 1)[0]
+    trainer.fieldCard = playedCardId // Placer la carte sur le terrain
+    console.log('Carte à jouer (ID) :', playedCardId)
+
+    // Trouver l'adversaire (l'autre entraîneur dans la partie)
+    const opponent = [...this.trainers.values()].find(
+      (o) => o.socketId !== socketId, // L'ID de socket est différent, c'est donc l'adversaire !
+    )
+
+    // Vérifier que l'adversaire existe
+    if (!opponent) throw new Error('Adversaire introuvable')
+
+    // 5. Construire et retourner l'état de jeu du point de vue de l'entraîneur
+    return {
+      clientTurn: this.turn === socketId,
+      clientDeckCards: [...trainer.deckCards],
+      clientHandCards: [...trainer.handCards],
+      clientFieldCard: trainer.fieldCard,
+      clientScore: trainer.score,
+
+      opponentFieldCard: opponent.fieldCard,
+      opponentScore: opponent.score,
+      opponentHandCount: opponent.handCards.length,
+      opponentDeckCount: opponent.deckCards.length,
     }
   }
 
@@ -153,7 +213,7 @@ export class GameLogic {
   public getGameStateFor(socketId: string): ClientGameState {
     // 1. Vérifier que l'entraîneur existe
     const trainer = this.trainers.get(socketId)
-    if (!trainer) throw new Error('Joueur introuvable')
+    if (!trainer) throw new Error('Entraîneur introuvable')
 
     // 2. Trouver l'adversaire (l'autre entraîneur dans la partie)
     const opponent = [...this.trainers.values()].find(
@@ -179,10 +239,10 @@ export class GameLogic {
   }
 
   /**
-   * @description Retourne les IDs de socket de tous les joueurs de la partie.
+   * @description Retourne les IDs de socket de tous les entraîneurs de la partie.
    * @public
    *
-   * @returns {string[]} La liste des IDs de socket des joueurs.
+   * @returns {string[]} La liste des IDs de socket des entraîneurs.
    */
   public getTrainerSocketIds(): string[] {
     return [...this.trainers.keys()]

@@ -15,6 +15,7 @@ import { ClientGameState, GameLogic } from './GameLogic'
  * @property {function} joinRoom - Un utilisateur a rejoint une salle, avec l'ID de la salle et l'ID du deck utilisé en paramètre.
  * @property {function} leaveRoom - Un utilisateur a quitté une salle, avec l'ID de la salle en paramètre.
  * @property {function} drawCards - Un entraîneur demande à piocher des cartes jusqu'à avoir 5 cartes en main.
+ * @property {function} playCard - Un entraîneur demande à jouer une carte, avec l'ID de la salle et l'index de la carte dans la main en paramètre.
  */
 interface ClientToServerEvents {
   user: () => void
@@ -23,6 +24,7 @@ interface ClientToServerEvents {
   joinRoom: (data: { roomId: string; deckId: number }) => void
   leaveRoom: (roomId: string) => void
   drawCards: () => void
+  playCard: (data: { roomId: string; cardIndex: number }) => void
 }
 
 /**
@@ -195,6 +197,7 @@ export class SocketServer {
         this.handleLeaveRoom(socket, userData, roomId),
       )
       socket.on('drawCards', () => this.handleDrawCards(socket))
+      socket.on('playCard', (data) => this.handlePlayCard(socket, data))
       socket.on('disconnect', () => this.handleDisconnect(socket))
       socket.on('error', (error) => this.handleError(socket, error))
     })
@@ -228,7 +231,7 @@ export class SocketServer {
     }[] = []
 
     this.rooms.forEach((roomData, roomId) => {
-      // Seules les salles avec exactement 1 joueur sont disponibles (le host uniquement).
+      // Seules les salles avec exactement 1 entraîneur sont disponibles (le host uniquement).
       if (roomData.users.size === 1) {
         const [hostSocketId] = roomData.users // Récupérer l'ID du socket du host
         const hostSocket = this.io.sockets.sockets.get(hostSocketId)
@@ -312,7 +315,7 @@ export class SocketServer {
 
   /**
    * @description Méthode pour gérer l'événement `joinRoom` -> rejoint une salle existante avec l'ID de la salle et l'ID du deck utilisé en paramètre.
-   * La salle doit exister et avoir moins de 1 joueur (le host uniquement).
+   * La salle doit exister et avoir moins de 1 entraîneur (le host uniquement).
    * Le deck doit exister, appartenir à l'utilisateur et contenir exactement 10 cartes valides.
    * Si l'utilisateur est déjà dans une salle, il en est retiré automatiquement avant de rejoindre.
    * @private
@@ -376,7 +379,7 @@ export class SocketServer {
 
     console.log(`${userData.email} a rejoint la salle ${roomId}`)
 
-    // 7. Démarrer la partie dès que 2 joueurs sont présents
+    // 7. Démarrer la partie dès que 2 entraîneurs sont présents
     if (roomData.users.size === 2) {
       const users = this.getRoomUsers(roomId) // Récupérer la liste des utilisateurs présents dans la salle
 
@@ -388,7 +391,7 @@ export class SocketServer {
       const hostSocket = this.io.sockets.sockets.get(hostSocketId)
       const hostData = hostSocket?.data as UserData
 
-      // 3. Ajouter les deux joueurs à la logique de jeu avec leurs données respectives (ID du deck, main vide, aucune carte active sur le terrain, score à 0)
+      // 3. Ajouter les deux entraîneurs à la logique de jeu avec leurs données respectives (ID du deck, main vide, aucune carte active sur le terrain, score à 0)
       game.addTrainer({
         ...hostData,
         socketId: hostSocketId,
@@ -421,7 +424,7 @@ export class SocketServer {
       })
 
       console.log(
-        `La partie dans la salle ${roomId} a démarré avec les joueurs : ${users.join(', ')}`,
+        `La partie dans la salle ${roomId} a démarré avec les entraîneurs : ${users.join(', ')}`,
       )
     }
   }
@@ -456,18 +459,20 @@ export class SocketServer {
     }
 
     // 3. Supprimer la salle si elle est vide
-    // Étant donné qu'une partie démarre directement lorsqu'il y a 2 joueurs, un joueur qui n'est pas host ne pourra jamais être seul dans une salle. Seul le host peut être seul, et s'il quitte, la salle doit être supprimée.
+    // Étant donné qu'une partie démarre directement lorsqu'il y a 2 entraîneurs, un entraîneur qui n'est pas host ne pourra jamais être seul dans une salle. Seul le host peut être seul, et s'il quitte, la salle doit être supprimée.
     if (roomData.users.size === 0) {
       this.rooms.delete(roomId)
       console.log(`La salle ${roomId} a été supprimée`)
     }
   }
 
+  // TODO: Pour les méthodes suivantes, il faudrait regrouper les vérifications 'Salle introuvable' et 'Partie introuvable' dans une fonction privée pour éviter la redondance de code.
   /**
    * @description Méthode pour gérer l'événement `drawCards` -> pioche des cartes depuis le deck jusqu'à avoir 5 cartes en main.
    * @private
    *
    * @param {TypedSocket} socket - Le socket du client qui a envoyé l'événement.
+   * @return {boolean | void} - Retourne false en cas d'erreur, sinon rien.
    */
   private handleDrawCards(socket: TypedSocket): boolean | void {
     const userData = socket.data as UserData
@@ -482,6 +487,43 @@ export class SocketServer {
     // 2. Pioche (lève des erreurs gérées par la logique du jeu).
     try {
       game.drawCards(socket.id)
+    } catch (error) {
+      return socket.emit('error', (error as Error).message)
+    }
+
+    // 3. Envoyer l'état mis à jour à chaque entraîneur séparément afin de garder la main et le deck non exposés à l'autre entraîneur.
+    for (const socketId of game.getTrainerSocketIds()) {
+      const clientSocket = this.io.sockets.sockets.get(socketId) // Récupérer le socket de l'entraîneur à partir de son ID de socket
+      if (clientSocket) {
+        clientSocket.emit('gameStateUpdated', game.getGameStateFor(socketId))
+      }
+    }
+  }
+
+  /**
+   * @description Méthode pour gérer l'événement `playCard` -> joue une carte de la main sur le terrain, avec l'ID de la carte en paramètre.
+   * @private
+   *
+   * @param {TypedSocket} socket - Le socket du client qui a envoyé l'événement.
+   * @param {number} cardId - L'ID de la carte à jouer.
+   * @return {boolean | void} - Retourne false en cas d'erreur, sinon rien.
+   */
+  private handlePlayCard(
+    socket: TypedSocket,
+    data: { roomId: string; cardIndex: number },
+  ): boolean | void {
+    const userData = socket.data as UserData
+
+    // 1. Vérifier que l'entraineur est dans une salle avec une partie en cours
+    const roomId = this.userRooms.get(userData.userId)
+    if (!roomId) return socket.emit('error', 'Salle introuvable')
+
+    const game = this.games.get(roomId)
+    if (!game) return socket.emit('error', 'Partie introuvable')
+
+    // 2. Jouer la carte (lève des erreurs gérées par la logique du jeu).
+    try {
+      game.playCard(socket.id, data)
     } catch (error) {
       return socket.emit('error', (error as Error).message)
     }
