@@ -1,4 +1,6 @@
 import { prisma } from '../database'
+import { PokemonType } from '../generated/prisma/client'
+import { calculateDamage } from '../utils/rules.util'
 
 /**
  * @description Typage des données de l'entraîneur
@@ -135,7 +137,7 @@ export class GameLogic {
     if (trainer.handCards.length >= 5)
       throw new Error('Main pleine (5 cartes maximum)')
 
-    // Piocher des cartes jusqu'à avoir 5 cartes en main ou jusqu'à épuiser le deck
+    // 4. Piocher des cartes jusqu'à avoir 5 cartes en main ou jusqu'à épuiser le deck
     while (trainer.handCards.length < 5 && trainer.deckCards.length > 0) {
       // Shift() permet de retirer la première carte du deck et de la retourner. Étant donné que le deck a été mélangé au préalable, cela simule une pioche aléatoire.
       const card = trainer.deckCards.shift()!
@@ -186,7 +188,10 @@ export class GameLogic {
     // Vérifier que l'adversaire existe
     if (!opponent) throw new Error('Adversaire introuvable')
 
-    // 5. Construire et retourner l'état de jeu du point de vue de l'entraîneur
+    // 5. Passer le tour à l'adversaire
+    this.turn = opponent.socketId
+
+    // 6. Construire et retourner l'état de jeu du point de vue de l'entraîneur
     return {
       clientTurn: this.turn === socketId,
       clientDeckCards: [...trainer.deckCards],
@@ -199,6 +204,132 @@ export class GameLogic {
       opponentHandCount: opponent.handCards.length,
       opponentDeckCount: opponent.deckCards.length,
     }
+  }
+
+  // TODO: Peut-être éviter les appels à la base de données à chaque attaque ?
+  /**
+   * @description Méthode pour gérer l'événement `attack` -> attaque avec la carte active sur le terrain.
+   * @async
+   * @public
+   *
+   * @param {string} socketId - L'ID du socket de l'entraîneur qui attaque.
+   * @returns {ClientGameState} L'état de jeu du point de vue de l'entraîneur.
+   * @throws {Error} Si l'entraîneur est introuvable, si ce n'est pas son tour, si aucune carte active sur le terrain, ou si l'adversaire n'a pas de carte active.
+   */
+  public async attack(socketId: string): Promise<ClientGameState> {
+    // Vérifier que l'entraîneur existe
+    const trainer = this.trainers.get(socketId)
+    if (!trainer) throw new Error('Entraîneur introuvable')
+
+    // Vérifier que c'est le tour de l'entraîneur
+    if (this.turn !== socketId) throw new Error('Halte ! attendez votre tour !')
+
+    // Vérifier qu'il y a une carte active sur le terrain
+    if (trainer.fieldCard === 0)
+      throw new Error('Aucune carte active sur le terrain')
+
+    // Trouver l'adversaire (l'autre entraîneur dans la partie)
+    const opponent = [...this.trainers.values()].find(
+      (o) => o.socketId !== socketId, // L'ID de socket est différent, c'est donc l'adversaire !
+    )
+
+    // Vérifier que l'adversaire existe
+    if (!opponent) throw new Error('Adversaire introuvable')
+
+    // Vérifier que l'adversaire a une carte active sur le terrain
+    if (opponent.fieldCard === 0)
+      throw new Error("L'adversaire n'a pas de carte active sur le terrain")
+
+    // 1. Récupérer les cartes complètes pour lire leurs propriétés
+    const trainerfieldCard = await prisma.card.findUnique({
+      where: { id: trainer.fieldCard },
+    })
+    const opponentfieldCard = await prisma.card.findUnique({
+      where: { id: opponent.fieldCard },
+    })
+    if (!trainerfieldCard || !opponentfieldCard)
+      throw new Error('Carte active introuvable')
+
+    // 2. Calculer les dégâts infligés par l'entraîneur à l'adversaire
+    const damage = calculateDamage(
+      Number(trainerfieldCard.attack || 0),
+      trainerfieldCard.type as PokemonType,
+      opponentfieldCard.type as PokemonType,
+    )
+
+    // 3. Soustraire les dégâts de la carte active de l'adversaire
+    opponentfieldCard.hp = Number(opponentfieldCard.hp) - damage
+
+    console.log(
+      `Dégâts infligés : ${damage} (${trainerfieldCard.name} -> ${opponentfieldCard.name})`,
+    )
+    console.log(`HP restant de la carte adverse : ${opponentfieldCard.hp || 0}`) // Empêcher les valeurs négatives
+
+    // 4. Vérifier si la carte active de l'adversaire est vaincue
+    if (opponentfieldCard.hp <= 0) {
+      opponent.fieldCard = 0 // Retirer la carte du terrain de l'adversaire
+      trainer.score += 1 // L'entraîneur marque 1 point pour avoir vaincu une carte adverse
+      console.log('Carte adverse vaincue !')
+    }
+
+    // 5. Passer le tour à l'adversaire
+    this.turn = opponent.socketId
+
+    // 6. Construire et retourner l'état de jeu du point de vue de l'entraîneur
+    return {
+      clientTurn: this.turn === socketId,
+      clientDeckCards: [...trainer.deckCards],
+      clientHandCards: [...trainer.handCards],
+      clientFieldCard: trainer.fieldCard,
+      clientScore: trainer.score,
+
+      opponentFieldCard: opponent.fieldCard,
+      opponentScore: opponent.score,
+      opponentHandCount: opponent.handCards.length,
+      opponentDeckCount: opponent.deckCards.length,
+    }
+  }
+
+  /**
+   * @description Méthode pour gérer l'événement `endTurn` -> passer le tour à l'adversaire.
+   * @public
+   *
+   * @param {string} socketId - L'ID du socket de l'entraîneur qui termine son tour.
+   * @return {ClientGameState} L'état de jeu du point de vue de l'entraîneur.
+   * @throws {Error} Si l'entraîneur est introuvable, ou si ce n'est pas son tour.
+   */
+  public endTurn(socketId: string): ClientGameState {
+    // Vérifier que l'entraîneur existe
+    const trainer = this.trainers.get(socketId)
+    if (!trainer) throw new Error('Entraîneur introuvable')
+
+    // Vérifier que c'est le tour de l'entraîneur
+    if (this.turn !== socketId) throw new Error('Halte ! attendez votre tour !')
+
+    // Trouver l'adversaire (l'autre entraîneur dans la partie)
+    const opponent = [...this.trainers.values()].find(
+      (o) => o.socketId !== socketId, // L'ID de socket est différent, c'est donc l'adversaire !
+    )
+
+    // Vérifier que l'adversaire existe
+    if (!opponent) throw new Error('Adversaire introuvable')
+
+    // Passer le tour à l'adversaire
+    this.turn = opponent.socketId
+
+    // Construire et retourner l'état de jeu du point de vue de l'entraîneur
+    return {
+      clientTurn: this.turn === socketId,
+      clientDeckCards: [...trainer.deckCards],
+      clientHandCards: [...trainer.handCards],
+      clientFieldCard: trainer.fieldCard,
+      clientScore: trainer.score,
+
+      opponentFieldCard: opponent.fieldCard,
+      opponentScore: opponent.score,
+      opponentHandCount: opponent.handCards.length,
+      opponentDeckCount: opponent.deckCards.length,
+    } // Extrait du ticket n°11 : "L'état du jeu contient l'information sur le joueur actuel (`currentPlayerSocketId`)" => wtf do you mean? UwU
   }
 
   /**

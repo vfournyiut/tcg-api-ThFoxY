@@ -16,6 +16,8 @@ import { ClientGameState, GameLogic } from './GameLogic'
  * @property {function} leaveRoom - Un utilisateur a quitté une salle, avec l'ID de la salle en paramètre.
  * @property {function} drawCards - Un entraîneur demande à piocher des cartes jusqu'à avoir 5 cartes en main.
  * @property {function} playCard - Un entraîneur demande à jouer une carte, avec l'ID de la salle et l'index de la carte dans la main en paramètre.
+ * @property {function} attack - Un entraîneur demande à attaquer avec sa carte active.
+ * @property {function} endTurn - Un entraîneur demande à terminer son tour.
  */
 interface ClientToServerEvents {
   user: () => void
@@ -25,6 +27,8 @@ interface ClientToServerEvents {
   leaveRoom: (roomId: string) => void
   drawCards: () => void
   playCard: (data: { roomId: string; cardIndex: number }) => void
+  attack: () => void
+  endTurn: () => void
 }
 
 /**
@@ -40,6 +44,7 @@ interface ClientToServerEvents {
  * @property {function} roomUserLeft - Envoie un message à tous les clients d'une salle lorsqu'un utilisateur quitte la salle, avec l'email de l'utilisateur en paramètre.
  * @property {function} gameStarted - Envoie l'état initial de la partie démarrée à tous les clients de la salle. Les données contiennent le nom de la salle, la liste des utilisateurs présents dans la salle, et les IDs des decks utilisés par chaque entraîneur.
  * @property {function} gameStateUpdated - Envoie l'état du jeu mis à jour à l'entraîneur concerné.
+ * @property {function} gameEnded - Envoie un message de fin de partie à tous les clients de la salle en cas de victoire d'un des entraîneurs, avec l'email du gagnant en paramètre.
  * @property {function} error - Envoie un message en cas d'erreur, avec le message d'erreur en paramètre.
  */
 interface ServerToClientEvents {
@@ -63,6 +68,7 @@ interface ServerToClientEvents {
     deck2: number
   }) => void
   gameStateUpdated: (state: ClientGameState) => void
+  gameEnded: (email: string) => void
   error: (message: string) => void
 }
 
@@ -198,6 +204,8 @@ export class SocketServer {
       )
       socket.on('drawCards', () => this.handleDrawCards(socket))
       socket.on('playCard', (data) => this.handlePlayCard(socket, data))
+      socket.on('attack', () => this.handleAttack(socket))
+      socket.on('endTurn', () => this.handleEndTurn(socket))
       socket.on('disconnect', () => this.handleDisconnect(socket))
       socket.on('error', (error) => this.handleError(socket, error))
     })
@@ -524,6 +532,85 @@ export class SocketServer {
     // 2. Jouer la carte (lève des erreurs gérées par la logique du jeu).
     try {
       game.playCard(socket.id, data)
+    } catch (error) {
+      return socket.emit('error', (error as Error).message)
+    }
+
+    // 3. Envoyer l'état mis à jour à chaque entraîneur séparément afin de garder la main et le deck non exposés à l'autre entraîneur.
+    for (const socketId of game.getTrainerSocketIds()) {
+      const clientSocket = this.io.sockets.sockets.get(socketId) // Récupérer le socket de l'entraîneur à partir de son ID de socket
+      if (clientSocket) {
+        clientSocket.emit('gameStateUpdated', game.getGameStateFor(socketId))
+      }
+    }
+  }
+
+  /**
+   * @description Méthode pour gérer l'événement `attack` -> attaque avec la carte active sur le terrain.
+   * @private
+   *
+   * @param {TypedSocket} socket - Le socket du client qui a envoyé l'événement.
+   * @return {boolean | void} - Retourne false en cas d'erreur, sinon rien.
+   */
+  private handleAttack(socket: TypedSocket): boolean | void {
+    const userData = socket.data as UserData
+
+    // 1. Vérifier que l'entraineur est dans une salle avec une partie en cours
+    const roomId = this.userRooms.get(userData.userId)
+    if (!roomId) return socket.emit('error', 'Salle introuvable')
+
+    const game = this.games.get(roomId)
+    if (!game) return socket.emit('error', 'Partie introuvable')
+
+    // 2. Attaquer (lève des erreurs gérées par la logique du jeu).
+    try {
+      game.attack(socket.id)
+    } catch (error) {
+      return socket.emit('error', (error as Error).message)
+    }
+
+    // 3. Envoyer l'état mis à jour à chaque entraîneur séparément afin de garder la main et le deck non exposés à l'autre entraîneur.
+    for (const socketId of game.getTrainerSocketIds()) {
+      const clientSocket = this.io.sockets.sockets.get(socketId) // Récupérer le socket de l'entraîneur à partir de son ID de socket
+      if (clientSocket) {
+        clientSocket.emit('gameStateUpdated', game.getGameStateFor(socketId))
+      }
+    }
+
+    // 4. Vérifier si l'un des entraîneurs a gagné
+    const updatedGameState = game.getGameStateFor(socket.id)
+    if (updatedGameState.clientScore >= 3) {
+      // Envoyer un message de victoire à tous les clients de la salle
+      this.io.to(roomId).emit('gameEnded', userData.email)
+
+      // Supprimer la partie de la salle
+      this.games.delete(roomId)
+      console.log(
+        `La partie dans la salle ${roomId} a pris fin. Vainqueur : ${userData.email}`,
+      )
+    }
+  }
+
+  /**
+   * @description Méthode pour gérer l'événement `endTurn` -> termine le tour de l'entraîneur actif.
+   * @private
+   *
+   * @param {TypedSocket} socket - Le socket du client qui a envoyé l'événement.
+   * @return {boolean | void} - Retourne false en cas d'erreur, sinon rien.
+   */
+  private handleEndTurn(socket: TypedSocket): boolean | void {
+    const userData = socket.data as UserData
+
+    // 1. Vérifier que l'entraineur est dans une salle avec une partie en cours
+    const roomId = this.userRooms.get(userData.userId)
+    if (!roomId) return socket.emit('error', 'Salle introuvable')
+
+    const game = this.games.get(roomId)
+    if (!game) return socket.emit('error', 'Partie introuvable')
+
+    // 2. Terminer le tour (lève des erreurs gérées par la logique du jeu).
+    try {
+      game.endTurn(socket.id)
     } catch (error) {
       return socket.emit('error', (error as Error).message)
     }

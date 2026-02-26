@@ -110,6 +110,9 @@ function createRoom() {
   const data = { deckId }
   log(`➡️ createRoom: ${JSON.stringify(data)}`, 'sent')
   socket.emit('createRoom', data)
+
+  // Nettoyer le champ après l'envoi
+  document.getElementById('createRoomDeckId').value = ''
 }
 
 function joinRoom() {
@@ -121,6 +124,10 @@ function joinRoom() {
   const data = { roomId, deckId }
   log(`➡️ joinRoom: ${JSON.stringify(data)}`, 'sent')
   socket.emit('joinRoom', data)
+
+  // Nettoyer les champs après l'envoi
+  document.getElementById('joinRoomId').value = ''
+  document.getElementById('joinRoomDeckId').value = ''
 }
 
 // Game events
@@ -145,6 +152,7 @@ function playCard() {
   const data = { roomId, cardIndex }
   log(`➡️ playCard: ${JSON.stringify(data)}`, 'sent')
   socket.emit('playCard', data)
+  document.getElementById('playCardIndex').value = '' // Nettoyer le champ après l'envoi
 }
 
 function attack() {
