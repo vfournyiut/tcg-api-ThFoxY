@@ -1,0 +1,184 @@
+openapi: 3.0.0
+info:
+  title: API Documentation TCG Pokémon
+  version: 1.0.0
+  description: Documentation de l'API TCG Pokémon avec authentification JWT
+  contact:
+    name: ThFoxY
+    email: davidmel7562@gmail.com
+
+servers:
+  - url: http://localhost:3001
+    description: Serveur de développement
+  - url: http://localhost:3001 # Pas encore hébergé, à adapter lors du déploiement Railway
+    description: Serveur de production
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 'Token JWT à obtenir via /auth/sign-up ou /auth/sign-in'
+
+  schemas:
+    # User: Représente un utilisateur de l'application
+    # - userId: Identifiant unique de l'utilisateur
+    # - username: Nom d'utilisateur choisi par l'utilisateur
+    # - email: Adresse email de l'utilisateur
+    User:
+      type: object
+      properties:
+        userId:
+          type: integer
+          example: 1
+        username:
+          type: string
+          example: 'test'
+        email:
+          type: string
+          format: email
+          example: 'test@example.com'
+
+    # Card: Représente une carte Pokémon
+    # - id: Identifiant unique de la carte
+    # - name: Nom de la carte Pokémon
+    # - hp: Points de vie de la carte
+    # - attack: Points d'attaque de la carte
+    # - pokedexNumber: Numéro de Pokédex de la carte
+    # - imgUrl: URL de l'image de la carte
+    Card:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: 'Pikachu'
+        hp:
+          type: integer
+          example: 60
+        attack:
+          type: integer
+          example: 40
+        pokedexNumber:
+          type: integer
+          example: 25
+        imgUrl:
+          type: string
+          example: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png'
+
+    # Deck: Représente un deck de cartes appartenant à un utilisateur
+    # - id: Identifiant unique du deck
+    # - name: Nom du deck choisi par l'utilisateur
+    # - userId: Identifiant de l'utilisateur propriétaire du deck
+    # - cards: Liste des cartes appartenant au deck (table de jointure entre Deck et Card)
+    Deck:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: 'My Test Deck'
+        userId:
+          type: integer
+          example: 1
+        cards:
+          type: array
+          items:
+            $ref: '#/components/schemas/Card'
+
+    # DeckWithoutCards: Représente un deck sans les cartes associées (utilisé pour les listes de decks sans détails)
+    # - id: Identifiant unique du deck
+    # - name: Nom du deck choisi par l'utilisateur
+    # - userId: Identifiant de l'utilisateur propriétaire du deck
+    DeckWithoutCards:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: 'My Test Deck'
+        userId:
+          type: integer
+          example: 1
+
+  responses:
+    BaseError:
+      description: Erreur de base.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: 'Une erreur est survenue'
+
+    BadRequestError:
+      description: Requête mal formée ou données invalides.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: 'Données manquantes'
+
+    UnauthorizedError:
+      description: L'authentification JWT a échoué.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: 'Token invalide ou expiré'
+
+    ForbiddenError:
+      description: L'utilisateur authentifié n'est pas le propriétaire du deck spécifié.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: 'Deck inaccessible'
+
+    NotFoundError:
+      description: Le deck spécifié n'existe pas.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: 'Deck introuvable'
+
+    ServerError:
+      description: Erreur interne côté serveur.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: 'Server error'
+
+tags:
+  - name: Authentication
+    description: Gestion de l'authentification (inscription et connexion) de l'utilisateur.
+  - name: Cards
+    description: Gestion des cartes.
+  - name: Decks
+    description: Gestion des decks.

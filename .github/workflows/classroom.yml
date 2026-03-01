@@ -43,3 +43,6 @@ jobs:
 
       - name: Build project
         run: npm run test
+        env:
+          DATABASE_URL: ${ secrets.DATABASE_URL }
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'test-secret-key' }}
